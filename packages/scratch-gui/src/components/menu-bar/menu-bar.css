@@ -1,4 +1,5 @@
 @import "../../css/colors.css";
+@import "../../css/sparky-tokens.css";
 @import "../../css/units.css";
 @import "../../css/z-index.css";
 
@@ -27,7 +28,7 @@
     font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
     font-size: $menu-bar-standard-font-size;
     font-weight: bold;
-    background-color: $looks-secondary;
+    background-color: $sparky-blue;
     color: $ui-white;
 }
 
@@ -43,7 +44,7 @@
     opacity: 0;
 }
 .scratch-logo {
-    height:  1.6rem;
+    height:  2.125rem; /* 34px: Figma logo_sparky is 116 x 34 */
     vertical-align: middle;
 }
 
@@ -111,7 +112,7 @@
 }
 
 .feedback-link {
-    color: $looks-secondary;
+    color: $sparky-blue;
     text-decoration: none;
 }
 
@@ -135,15 +136,18 @@
 }
 
 .remix-button {
-    background-color: $pen-primary
+    background-color: $sparky-yellow;
+    color: $sparky-navy;
 }
 
 .remix-button-icon {
     height: 1.25rem;
 }
 
+/* Coming-soon items (Share, My Stuff, the profile chip) keep full colour: at half opacity the Sparky yellow over
+   the blue bar reads as olive green. Their tooltip still says "coming soon". */
 .coming-soon >:not(.coming-soon-tooltip) {
-    opacity: 0.5;
+    opacity: 1;
 }
 
 .account-info-group {

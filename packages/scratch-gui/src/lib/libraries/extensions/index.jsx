@@ -49,7 +49,50 @@ import gdxforConnectionSmallIconURL from './gdxfor/gdxfor-small.svg';
 import faceSensingIconURL from './faceSensing/faceSensing.png';
 import faceSensingInsetIconURL from './faceSensing/faceSensing-small.svg';
 
+import sparkIconURL from './spark/spark-banner.png';
+import sparkInsetIconURL from './spark/spark-badge.svg';
+import sparkConnectionSmallIconURL from './spark/spark-modal-icon.svg';
+
 export default [
+    {
+        name: (
+            <FormattedMessage
+                defaultMessage="Sparky"
+                description="Name for the Sparky IoT extension"
+                id="gui.extension.spark.name"
+            />
+        ),
+        extensionId: 'Sparky',
+        iconURL: sparkIconURL,
+        insetIconURL: sparkInsetIconURL,
+        description: (
+            <FormattedMessage
+                defaultMessage="Control your Spark IoT kit."
+                description="Description for the Spark extension"
+                id="gui.extension.spark.description"
+            />
+        ),
+        featured: true,
+        disabled: false,
+        launchPeripheralConnectionFlow: true,
+        useAutoScan: true,
+        connectionIconURL: sparkIconURL,
+        connectionSmallIconURL: sparkConnectionSmallIconURL,
+        prescanMessage: (
+            <FormattedMessage
+                defaultMessage="Make sure your Spark kit is connected via USB and the Spark app is open."
+                description="Prompt before connecting to Spark"
+                id="gui.extension.spark.prescanMessage"
+            />
+        ),
+        connectingMessage: (
+            <FormattedMessage
+                defaultMessage="Connecting to Sparky..."
+                description="Connecting message for Sparky"
+                id="gui.extension.spark.connectingMessage"
+            />
+        )
+    },
     {
         name: (
             <FormattedMessage
