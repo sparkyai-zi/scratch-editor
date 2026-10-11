@@ -36,11 +36,13 @@ variables:
 # runner clone จาก GitHub แล้ว push กลับเข้า repo ตัวเอง (network ภายใน)
 mirror:
   stage: mirror
-  image: "alpine/git:latest"
+  image: "alpine:3.19"
   rules:
     - if: $CI_PIPELINE_SOURCE == "schedule"
   variables:
     GIT_DEPTH: "0"
+  before_script:
+    - apk add --no-cache git
   script:
     - git clone --single-branch --branch develop https://github.com/sparkyai-zi/scratch-editor.git repo
     - cd repo
