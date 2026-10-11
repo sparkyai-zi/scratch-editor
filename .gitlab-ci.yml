@@ -1,21 +1,34 @@
 # Sparky Scratch Editor — GitLab CI/CD
 #
-# Pipeline: test → build → image (docker build+push) → deploy (helm → k8s)
+# Pipeline:
+#   schedule -> mirror (sync develop จาก GitHub) — เท่านั้น
+#   push/MR  -> test -> build -> image -> deploy
+#
 # image/deploy ทำงานบน default branch และ tag เท่านั้น (MR ได้แค่ test+build)
 #
 # Registry: บังคับใช้ registry.zicure.com (Harbor, IP ตรง) — ห้ามใช้ registry
 # ของ GitLab instance (registry.zi-github.com อยู่หลัง Cloudflare → push image
 # ใหญ่จะโดน 413 Payload Too Large)
 #
-# Variables ที่ต้องตั้งใน Settings > CI/CD > Variables:
+# Variables ที่ตั้งใน Settings > CI/CD > Variables:
 #   REGISTRY_USER / REGISTRY_PASSWORD  (masked) — account ของ registry.zicure.com
 #   KUBE_CONFIG_STAGING               (regular, ชนิด text) — เนื้อหา kubeconfig staging
+#   MIRROR_TOKEN                      (masked, optional) — PAT อ่าน GitHub ถ้า rate limit
+#                                     (repo public ไม่ต้องก็ได้; push กลับใช้ CI_JOB_TOKEN)
 
 stages:
+  - mirror
   - test
   - build
   - image
   - deploy
+
+# schedule ใช้แค่ job mirror — job อื่นห้ามวิ่ง (rules แรกเขียนทับ rules ท้าย)
+.when_not_schedule: &not_schedule
+  - if: $CI_PIPELINE_SOURCE == "schedule"
+    when: never
+  - if: $CI_PIPELINE_SOURCE == "merge_request_event"
+  - if: $CI_COMMIT_BRANCH
 
 variables:
   NODE_IMAGE: 'node:24'
@@ -37,6 +50,37 @@ variables:
   paths:
     - .npm/
 
+# ─── Mirror: sync develop จาก GitHub → GitLab (รันผ่าน schedule เท่านั้น) ───
+# ทำไมไม่ push จากเครื่อง dev: pack ~730MB (upstream history ทั้งหมด) push ตรง
+# ผ่าน SSH หลุดกลางทางเรื่อยๆ — job นี้รันบน runner (network ภายใน) clone จาก
+# GitHub แล้ว push กลับเข้า repo ตัวเอง ครั้งแรกครั้งเดียว หลังจากนั้น delta เล็ก
+#
+# ใช้กับ Schedule: CI/CD -> Schedules -> New schedule
+#   Branch: develop (หรือ main ตอน bootstrap)  Cron: 0 * * * *  ไม่ต้องตั้ง variables
+mirror:
+  stage: mirror
+  image: alpine/git:latest
+  rules:
+    - if: $CI_PIPELINE_SOURCE == "schedule"
+  variables:
+    GIT_DEPTH: "0"
+  script:
+    # clone แค่ branch develop จาก GitHub (repo public ไม่ต้อง auth;
+    # ถ้าโดน rate limit ตั้ง MIRROR_TOKEN เป็น PAT อ่าน GitHub)
+    - |
+      if [ -n "${MIRROR_TOKEN:-}" ]; then
+        git clone --single-branch --branch develop \
+          "https://x-access-token:${MIRROR_TOKEN}@github.com/sparkyai-zi/scratch-editor.git" repo
+      else
+        git clone --single-branch --branch develop \
+          https://github.com/sparkyai-zi/scratch-editor.git repo
+      fi
+    - cd repo
+    # push กลับเข้าตัวเองผ่าน CI job token (GitLab ให้ job เขียน repo ตัวเองได้)
+    - git remote set-url origin "https://gitlab-ci-token:${CI_JOB_TOKEN}@${CI_SERVER_HOST}/${CI_PROJECT_PATH}.git"
+    - git push --force origin develop:develop
+    - echo "mirror OK: $(git rev-parse --short HEAD)"
+
 test:
   stage: test
   image: $NODE_IMAGE
@@ -50,9 +94,7 @@ test:
     # `--if-present` so workspaces without a `test` script (asset / tooling
     # packages) don't break the pipeline.
     - npm test --workspaces --if-present
-  rules:
-    - if: $CI_PIPELINE_SOURCE == "merge_request_event"
-    - if: $CI_COMMIT_BRANCH
+  rules: *not_schedule
 
 build:
   stage: build
@@ -70,9 +112,7 @@ build:
     paths:
       - packages/scratch-gui/build/
     expire_in: 7 days
-  rules:
-    - if: $CI_PIPELINE_SOURCE == "merge_request_event"
-    - if: $CI_COMMIT_BRANCH
+  rules: *not_schedule
 
 # ─── Docker image: build จาก Dockerfile (multi-stage) แล้ว push ขึ้น Harbor ───
 image:
@@ -91,6 +131,8 @@ image:
     - docker tag ${REGISTRY}/${IMAGE_NAME}:${IMAGE_TAG} ${REGISTRY}/${IMAGE_NAME}:latest
     - docker push ${REGISTRY}/${IMAGE_NAME}:latest
   rules:
+    - if: $CI_PIPELINE_SOURCE == "schedule"
+      when: never
     - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
     - if: $CI_COMMIT_TAG
 
