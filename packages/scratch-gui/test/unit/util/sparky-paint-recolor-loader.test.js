@@ -4,8 +4,9 @@ import fs from 'fs';
 import path from 'path';
 import recolor from '../../../scripts/sparky-paint-recolor-loader';
 
-// webpack follows scratch-paint's `browser` field, so the editor is built from these files
-const PAINT_SRC = path.join(path.dirname(require.resolve('scratch-paint/package.json')), 'src');
+// scratch-paint lives in this monorepo; its `exports` map has no "./package.json"
+// target, so resolve the sibling workspace by path instead of by package name.
+const PAINT_SRC = path.join(__dirname, '..', '..', '..', '..', 'scratch-paint', 'src');
 
 const run = (resourcePath, source) => recolor.call({resourcePath}, source);
 
