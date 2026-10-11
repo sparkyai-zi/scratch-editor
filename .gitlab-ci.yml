@@ -42,18 +42,11 @@ mirror:
   variables:
     GIT_DEPTH: "0"
   script:
-    - |
-      if [ -n "${MIRROR_TOKEN:-}" ]; then
-        git clone --single-branch --branch develop \
-          "https://x-access-token:${MIRROR_TOKEN}@github.com/sparkyai-zi/scratch-editor.git" repo
-      else
-        git clone --single-branch --branch develop \
-          https://github.com/sparkyai-zi/scratch-editor.git repo
-      fi
+    - git clone --single-branch --branch develop https://github.com/sparkyai-zi/scratch-editor.git repo
     - cd repo
-    - git remote set-url origin "https://gitlab-ci-token:${CI_JOB_TOKEN}@${CI_SERVER_HOST}/${CI_PROJECT_PATH}.git"
+    - git remote set-url origin https://gitlab-ci-token:$CI_JOB_TOKEN@$CI_SERVER_HOST/$CI_PROJECT_PATH.git
     - git push --force origin develop:develop
-    - echo "mirror OK: $(git rev-parse --short HEAD)"
+    - git rev-parse --short HEAD
 
 test:
   stage: test
