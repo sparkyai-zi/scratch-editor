@@ -1,5 +1,5 @@
 # syntax=docker/dockerfile:1.7
-# Story 10.1: Multi-stage image for serving scratch-gui playground from a
+# Multi-stage image for serving scratch-gui playground from a
 # hardened non-root nginx. Build-once-deploy-many via runtime envsubst of
 # MIDDLEWARE_WS_URL into /env-config.js.
 
@@ -13,21 +13,22 @@ WORKDIR /src
 # package's `prepare: husky install` is git-only — we run it skipped via
 # --ignore-scripts and then trigger only scratch-gui's prepare explicitly.
 COPY . .
+# --ignore-scripts: skip husky's git-only prepare at the repo root and skip
+# install scripts of dev-only native modules (canvas has no musl prebuild and
+# the browser build never loads it). scratch-gui's own prepare (media-library
+# zip extraction) is re-run explicitly below.
 RUN npm ci --workspaces --include-workspace-root --ignore-scripts && \
-    npm rebuild && \
     npm run --workspace=packages/scratch-gui prepare
 ENV NODE_ENV=production
 # Build ONLY scratch-gui's dependency closure, in dependency order
-# (scratch-svg-renderer → scratch-render → scratch-vm → scratch-gui).
-# We deliberately do NOT run the monorepo-wide `npm run build`: the sibling
-# `@scratch/task-herder` package builds with rolldown-vite, and rolldown
-# 1.0.0-beta.53 fails to resolve its entry module ("[UNRESOLVED_ENTRY]"),
-# which aborts the whole workspace build. task-herder is not a dependency of
-# scratch-gui and is not shipped in this image, so excluding it is correct
-# scoping, not error suppression. (Tracked as a separate task-herder defect.)
-# scratch-gui's webpack consumes the upstream packages' `dist/` via their
-# `main` fields, so the upstream three must be built first, in this order.
-RUN npm run --workspace=packages/scratch-svg-renderer \
+# (task-herder → scratch-storage → scratch-svg-renderer → scratch-render →
+# scratch-vm → scratch-gui). scratch-vm resolves @scratch/scratch-storage and
+# @scratch/scratch-render through the workspaces symlink, whose package.json
+# `main`/`browser` fields point at each package's built dist/ — so every
+# upstream package must be built before its consumer.
+RUN npm run --workspace=packages/task-herder \
+            --workspace=packages/scratch-storage \
+            --workspace=packages/scratch-svg-renderer \
             --workspace=packages/scratch-render \
             --workspace=packages/scratch-vm \
             --workspace=packages/scratch-gui build
@@ -64,11 +65,6 @@ COPY --from=builder /src/VERSION /usr/share/nginx/html/VERSION
 # AGPL-3.0 §4: the image conveys the program, so it carries the license; also
 # served at /LICENSE on the web service.
 COPY LICENSE /usr/share/nginx/html/LICENSE
-
-# /firmware/ (OTA manifest + signed .bin) and /releases/ (download page + installers) are NOT in the image: the
-# host mounts them read-only from ~/scratch-editor-deploy/www/, which the WarutC/spark-firmware-releases
-# publish-site workflow fills from its GitHub releases. Docker creates the mount points when the container is
-# created (this stage runs as the unprivileged nginx user, so it could not mkdir under the root-owned html dir).
 
 COPY docker/nginx.conf /etc/nginx/conf.d/default.conf
 # Flat path under /usr/share/ — avoids /etc/nginx/templates/ (the base image's

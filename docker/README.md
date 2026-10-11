@@ -1,6 +1,6 @@
 # scratch-editor Docker image / อิมเมจ Docker สำหรับ scratch-editor
 
-> **Story 10.1** — Multi-stage build, non-root nginx static-serve, build-once-deploy-many via runtime `MIDDLEWARE_WS_URL` env-var. Foundation for Stories 10.2 (Helm), 10.3 (CI build+push), 10.4 (ArgoCD).
+> Multi-stage build, non-root nginx static-serve, build-once-deploy-many via runtime `MIDDLEWARE_WS_URL` env-var.
 
 ## §1 ภาพรวม / Overview
 
@@ -61,7 +61,7 @@ curl -i http://localhost:8080/healthz
 # ok
 ```
 
-ใช้สำหรับ Kubernetes `livenessProbe`/`readinessProbe` ใน Helm chart (Story 10.2).
+ใช้สำหรับ Kubernetes `livenessProbe`/`readinessProbe` ใน Helm chart (`kubernetes/`).
 
 ## §6 Verify AGPL footer
 
@@ -69,7 +69,7 @@ curl -i http://localhost:8080/healthz
 
 Load `/` → bottom-right footer → click `"ซอร์สโค้ด / Source"` → opens public source repo in a new tab.
 
-## §7 K8s deployment notes (สำหรับ Story 10.2)
+## §7 K8s deployment notes
 
 **Required Pod `securityContext`:**
 
@@ -91,7 +91,7 @@ securityContext:
 | `/var/cache/nginx` | nginx proxy/fastcgi cache dirs (แม้เราไม่ proxy ก็ตาม nginx ยัง mkdir) |
 | `/var/run` | nginx PID file |
 
-> `/usr/share/nginx/html` stays **read-only**. The entrypoint never writes into it — env-config rendering lives in `/tmp` and nginx aliases the request to that path. Story 10.2's Helm chart owns the actual pod spec; this README provides the contract.
+> `/usr/share/nginx/html` stays **read-only**. The entrypoint never writes into it — env-config rendering lives in `/tmp` and nginx aliases the request to that path. The Helm chart (`kubernetes/`) owns the actual pod spec; this README provides the contract.
 
 **Listener port:** 8080 (non-root, no `CAP_NET_BIND_SERVICE` needed). Service should expose `targetPort: 8080`.
 
