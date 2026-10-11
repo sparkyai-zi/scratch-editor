@@ -1,35 +1,32 @@
-# Sparky Scratch Editor — GitLab CI (Story 7.4)
+# Sparky Scratch Editor — GitLab CI/CD
 #
-# Scope (7.4): test + build only. The current UAT deploy still runs on
-# GitHub Actions (`.github/workflows/deploy-uat.yml`); that workflow stays
-# alive until **Story 10.3** migrates the image build/push to the GitLab
-# Container Registry and wires ArgoCD. Story 7.5 keeps the GH-Actions
-# workflow working during the transition window (Node24 action-SHA bump,
-# deadline 2026-06-02). DO NOT remove or modify `.github/workflows/*` here.
+# Pipeline: test → build → image (docker build+push) → deploy (helm → k8s)
+# image/deploy ทำงานบน default branch และ tag เท่านั้น (MR ได้แค่ test+build)
 #
-# Cross-references:
-#   - Story 7.4 (this file)     — test/build CI on GitLab
-#   - Story 7.5                 — keep GH-Actions deploy alive (Node24)
-#   - Story 10.3                — image build/push to GitLab Container
-#                                 Registry + ArgoCD + retire deploy-uat.yml
+# Registry: บังคับใช้ registry.zicure.com (Harbor, IP ตรง) — ห้ามใช้ registry
+# ของ GitLab instance (registry.zi-github.com อยู่หลัง Cloudflare → push image
+# ใหญ่จะโดน 413 Payload Too Large)
 #
-# Per-workspace `lint` scripts exist on a subset of workspaces
-# (task-herder, scratch-render, scratch-vm, scratch-media-lib-scripts);
-# `--if-present` makes the run a no-op on workspaces without one. There is
-# NO top-level lint script today; adding one is out of scope for 7.4.
+# Variables ที่ต้องตั้งใน Settings > CI/CD > Variables:
+#   REGISTRY_USER / REGISTRY_PASSWORD  (masked) — account ของ registry.zicure.com
+#   KUBE_CONFIG_STAGING               (regular, ชนิด text) — เนื้อหา kubeconfig staging
 
 stages:
   - test
   - build
+  - image
+  - deploy
 
 variables:
-  # Node 24 to match the editor's .nvmrc (24.15.0) and the Node24 bump
-  # tracked by Story 7.5 for the parallel GH-Actions deploy workflow.
   NODE_IMAGE: 'node:24'
+  REGISTRY: 'registry.zicure.com/spark-staging'
+  IMAGE_NAME: 'sparky-scratch-editor'
+  # ใช้ commit short sha เป็น tag เพื่อ cache-bust อัตโนมัติ
+  IMAGE_TAG: ${CI_COMMIT_SHORT_SHA}
+  DOCKER_TLS_CERTDIR: "/certs"
   # Cache npm's download cache (not node_modules). `npm ci` always wipes and
   # re-creates node_modules, so caching node_modules is wasted I/O and can
-  # leak state across MRs on the same branch. Caching `~/.npm` is the supported
-  # idiom and gives most of the install speedup.
+  # leak state on the same branch. Caching `~/.npm` is the supported idiom.
   npm_config_cache: '$CI_PROJECT_DIR/.npm'
 
 .node_cache: &node_cache
@@ -51,8 +48,7 @@ test:
     # Per-workspace lint (no-op on workspaces without a `lint` script).
     - npm run lint --workspaces --if-present
     # `--if-present` so workspaces without a `test` script (asset / tooling
-    # packages) don't break the pipeline. Lint already uses --if-present above;
-    # parity here was missing on the initial commit (Story 7.4 code review).
+    # packages) don't break the pipeline.
     - npm test --workspaces --if-present
   rules:
     - if: $CI_PIPELINE_SOURCE == "merge_request_event"
@@ -77,3 +73,57 @@ build:
   rules:
     - if: $CI_PIPELINE_SOURCE == "merge_request_event"
     - if: $CI_COMMIT_BRANCH
+
+# ─── Docker image: build จาก Dockerfile (multi-stage) แล้ว push ขึ้น Harbor ───
+image:
+  stage: image
+  image: docker:24-cli
+  services:
+    - docker:24-dind
+  needs:
+    - build
+  before_script:
+    - echo "$REGISTRY_PASSWORD" | docker login -u "$REGISTRY_USER" --password-stdin registry.zicure.com
+  script:
+    - docker build -t ${REGISTRY}/${IMAGE_NAME}:${IMAGE_TAG} .
+    - docker push ${REGISTRY}/${IMAGE_NAME}:${IMAGE_TAG}
+    # ป้าย latest ให้ human ใช้ (helm ค่า default ชี้ tag นี้)
+    - docker tag ${REGISTRY}/${IMAGE_NAME}:${IMAGE_TAG} ${REGISTRY}/${IMAGE_NAME}:latest
+    - docker push ${REGISTRY}/${IMAGE_NAME}:latest
+  rules:
+    - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
+    - if: $CI_COMMIT_TAG
+
+# ─── Deploy ด้วย helm ขึ้น staging cluster ───
+deploy:staging:
+  stage: deploy
+  image: dtzar/helm-kubectl:3.19   # มี helm3 + kubectl ใน image เดียว
+  environment:
+    name: staging
+    url: http://sparky.zi-platform.com
+  needs:
+    - image
+  before_script:
+    - mkdir -p ~/.kube
+    # KUBE_CONFIG_STAGING = variable ปกติ (ไม่ใช่ File type) -> ค่าคือเนื้อหา kubeconfig
+    # รองรับ 3 format: multi-line YAML / single-line ที่ \n เป็น literal / base64
+    # ห้าม sed ตัด quotes — string ใน kubeconfig ถูกครอบด้วย " ต้องคงไว้ (ตัดแล้ว YAML พัง)
+    - |
+      RAW="$KUBE_CONFIG_STAGING"
+      if ! printf '%s' "$RAW" | grep -q 'apiVersion'; then
+        DEC=$(printf '%s' "$RAW" | tr -d '\n' | base64 -d 2>/dev/null) || DEC=''
+        [ -n "$DEC" ] && RAW="$DEC"
+      fi
+      printf '%b' "$RAW" | sed 's/\r$//' > ~/.kube/config
+      kubectl config view --raw >/dev/null || { echo "kubeconfig invalid, head:"; head -c 300 ~/.kube/config; exit 1; }
+  script:
+    - |
+      helm upgrade --install sparky kubernetes/ -n spark-staging \
+        --reset-values \
+        --set image.repository=${REGISTRY}/${IMAGE_NAME} \
+        --set image.tag=${IMAGE_TAG} \
+        --wait --timeout 5m
+    - kubectl -n spark-staging get pods,ingress
+  rules:
+    - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
+    - if: $CI_COMMIT_TAG

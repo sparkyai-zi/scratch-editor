@@ -1,0 +1,6 @@
+apiVersion: v2
+name: sparky
+description: sparky scratch-editor — scratch-gui playground บน nginx-unprivileged static-serve
+type: application
+version: 0.1.0
+appVersion: "15.2.0"
