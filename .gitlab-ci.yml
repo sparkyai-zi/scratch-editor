@@ -46,7 +46,9 @@ mirror:
   script:
     - git clone --single-branch --branch develop https://github.com/sparkyai-zi/scratch-editor.git repo
     - cd repo
-    - git remote set-url origin https://gitlab-ci-token:$CI_JOB_TOKEN@$CI_SERVER_HOST/$CI_PROJECT_PATH.git
+    # push ด้วย MIRROR_PUSH_TOKEN (PAT/Project token scope write_repository)
+    # CI_JOB_TOKEN อ่านอย่างเดียว เขียนไม่ได้ -> 403
+    - git remote set-url origin https://oauth2:$MIRROR_PUSH_TOKEN@$CI_SERVER_HOST/$CI_PROJECT_PATH.git
     - git push --force origin develop:develop
     - git rev-parse --short HEAD
 
