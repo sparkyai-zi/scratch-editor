@@ -23,50 +23,25 @@ stages:
   - image
   - deploy
 
-# schedule ใช้แค่ job mirror — job อื่นห้ามวิ่ง (rules แรกเขียนทับ rules ท้าย)
-.when_not_schedule: &not_schedule
-  - if: $CI_PIPELINE_SOURCE == "schedule"
-    when: never
-  - if: $CI_PIPELINE_SOURCE == "merge_request_event"
-  - if: $CI_COMMIT_BRANCH
-
 variables:
-  NODE_IMAGE: 'node:24'
-  REGISTRY: 'registry.zicure.com/spark-staging'
-  IMAGE_NAME: 'sparky-scratch-editor'
-  # ใช้ commit short sha เป็น tag เพื่อ cache-bust อัตโนมัติ
-  IMAGE_TAG: ${CI_COMMIT_SHORT_SHA}
+  NODE_IMAGE: "node:24"
+  REGISTRY: "registry.zicure.com/spark-staging"
+  IMAGE_NAME: "sparky-scratch-editor"
+  IMAGE_TAG: "${CI_COMMIT_SHORT_SHA}"
   DOCKER_TLS_CERTDIR: "/certs"
-  # Cache npm's download cache (not node_modules). `npm ci` always wipes and
-  # re-creates node_modules, so caching node_modules is wasted I/O and can
-  # leak state on the same branch. Caching `~/.npm` is the supported idiom.
-  npm_config_cache: '$CI_PROJECT_DIR/.npm'
-
-.node_cache: &node_cache
-  key:
-    files:
-      - package-lock.json
-    prefix: '$CI_COMMIT_REF_SLUG'
-  paths:
-    - .npm/
+  npm_config_cache: "$CI_PROJECT_DIR/.npm"
 
 # ─── Mirror: sync develop จาก GitHub → GitLab (รันผ่าน schedule เท่านั้น) ───
-# ทำไมไม่ push จากเครื่อง dev: pack ~730MB (upstream history ทั้งหมด) push ตรง
-# ผ่าน SSH หลุดกลางทางเรื่อยๆ — job นี้รันบน runner (network ภายใน) clone จาก
-# GitHub แล้ว push กลับเข้า repo ตัวเอง ครั้งแรกครั้งเดียว หลังจากนั้น delta เล็ก
-#
-# ใช้กับ Schedule: CI/CD -> Schedules -> New schedule
-#   Branch: develop (หรือ main ตอน bootstrap)  Cron: 0 * * * *  ไม่ต้องตั้ง variables
+# push ตรง 730MB จากเครื่อง dev หลุดกลางทาง (Gitaly timeout) — job นี้รันบน
+# runner clone จาก GitHub แล้ว push กลับเข้า repo ตัวเอง (network ภายใน)
 mirror:
   stage: mirror
-  image: alpine/git:latest
+  image: "alpine/git:latest"
   rules:
     - if: $CI_PIPELINE_SOURCE == "schedule"
   variables:
     GIT_DEPTH: "0"
   script:
-    # clone แค่ branch develop จาก GitHub (repo public ไม่ต้อง auth;
-    # ถ้าโดน rate limit ตั้ง MIRROR_TOKEN เป็น PAT อ่าน GitHub)
     - |
       if [ -n "${MIRROR_TOKEN:-}" ]; then
         git clone --single-branch --branch develop \
@@ -76,33 +51,43 @@ mirror:
           https://github.com/sparkyai-zi/scratch-editor.git repo
       fi
     - cd repo
-    # push กลับเข้าตัวเองผ่าน CI job token (GitLab ให้ job เขียน repo ตัวเองได้)
     - git remote set-url origin "https://gitlab-ci-token:${CI_JOB_TOKEN}@${CI_SERVER_HOST}/${CI_PROJECT_PATH}.git"
     - git push --force origin develop:develop
     - echo "mirror OK: $(git rev-parse --short HEAD)"
 
 test:
   stage: test
-  image: $NODE_IMAGE
+  image: "$NODE_IMAGE"
   cache:
-    <<: *node_cache
+    key:
+      files:
+        - package-lock.json
+      prefix: "$CI_COMMIT_REF_SLUG"
+    paths:
+      - .npm/
   before_script:
     - npm ci --prefer-offline
   script:
-    # Per-workspace lint (no-op on workspaces without a `lint` script).
     - npm run lint --workspaces --if-present
-    # `--if-present` so workspaces without a `test` script (asset / tooling
-    # packages) don't break the pipeline.
     - npm test --workspaces --if-present
-  rules: *not_schedule
+  rules:
+    - if: $CI_PIPELINE_SOURCE == "schedule"
+      when: never
+    - if: $CI_PIPELINE_SOURCE == "merge_request_event"
+    - if: $CI_COMMIT_BRANCH
 
 build:
   stage: build
-  image: $NODE_IMAGE
+  image: "$NODE_IMAGE"
   needs:
     - test
   cache:
-    <<: *node_cache
+    key:
+      files:
+        - package-lock.json
+      prefix: "$CI_COMMIT_REF_SLUG"
+    paths:
+      - .npm/
     policy: pull
   before_script:
     - npm ci --prefer-offline
@@ -112,12 +97,15 @@ build:
     paths:
       - packages/scratch-gui/build/
     expire_in: 7 days
-  rules: *not_schedule
+  rules:
+    - if: $CI_PIPELINE_SOURCE == "schedule"
+      when: never
+    - if: $CI_PIPELINE_SOURCE == "merge_request_event"
+    - if: $CI_COMMIT_BRANCH
 
-# ─── Docker image: build จาก Dockerfile (multi-stage) แล้ว push ขึ้น Harbor ───
 image:
   stage: image
-  image: docker:24-cli
+  image: "docker:24-cli"
   services:
     - docker:24-dind
   needs:
@@ -127,7 +115,6 @@ image:
   script:
     - docker build -t ${REGISTRY}/${IMAGE_NAME}:${IMAGE_TAG} .
     - docker push ${REGISTRY}/${IMAGE_NAME}:${IMAGE_TAG}
-    # ป้าย latest ให้ human ใช้ (helm ค่า default ชี้ tag นี้)
     - docker tag ${REGISTRY}/${IMAGE_NAME}:${IMAGE_TAG} ${REGISTRY}/${IMAGE_NAME}:latest
     - docker push ${REGISTRY}/${IMAGE_NAME}:latest
   rules:
@@ -136,10 +123,9 @@ image:
     - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
     - if: $CI_COMMIT_TAG
 
-# ─── Deploy ด้วย helm ขึ้น staging cluster ───
 deploy:staging:
   stage: deploy
-  image: dtzar/helm-kubectl:3.19   # มี helm3 + kubectl ใน image เดียว
+  image: "dtzar/helm-kubectl:3.19"
   environment:
     name: staging
     url: http://sparky.zi-platform.com
@@ -147,9 +133,6 @@ deploy:staging:
     - image
   before_script:
     - mkdir -p ~/.kube
-    # KUBE_CONFIG_STAGING = variable ปกติ (ไม่ใช่ File type) -> ค่าคือเนื้อหา kubeconfig
-    # รองรับ 3 format: multi-line YAML / single-line ที่ \n เป็น literal / base64
-    # ห้าม sed ตัด quotes — string ใน kubeconfig ถูกครอบด้วย " ต้องคงไว้ (ตัดแล้ว YAML พัง)
     - |
       RAW="$KUBE_CONFIG_STAGING"
       if ! printf '%s' "$RAW" | grep -q 'apiVersion'; then
@@ -157,7 +140,7 @@ deploy:staging:
         [ -n "$DEC" ] && RAW="$DEC"
       fi
       printf '%b' "$RAW" | sed 's/\r$//' > ~/.kube/config
-      kubectl config view --raw >/dev/null || { echo "kubeconfig invalid, head:"; head -c 300 ~/.kube/config; exit 1; }
+      kubectl config view --raw >/dev/null || { echo "kubeconfig invalid"; exit 1; }
   script:
     - |
       helm upgrade --install sparky kubernetes/ -n spark-staging \
@@ -167,5 +150,7 @@ deploy:staging:
         --wait --timeout 5m
     - kubectl -n spark-staging get pods,ingress
   rules:
+    - if: $CI_PIPELINE_SOURCE == "schedule"
+      when: never
     - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
     - if: $CI_COMMIT_TAG
