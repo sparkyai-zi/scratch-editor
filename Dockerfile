@@ -61,6 +61,9 @@ COPY --from=builder /src/packages/scratch-gui/build/30d09ba32a17082ef820b57d52d6
 COPY --from=builder /src/packages/scratch-gui/build/chunks/ /usr/share/nginx/html/chunks/
 COPY --from=builder /src/packages/scratch-gui/build/static/ /usr/share/nginx/html/static/
 COPY --from=builder /src/VERSION /usr/share/nginx/html/VERSION
+# AGPL-3.0 §4: the image conveys the program, so it carries the license; also
+# served at /LICENSE on the web service.
+COPY LICENSE /usr/share/nginx/html/LICENSE
 
 # /firmware/ (OTA manifest + signed .bin) and /releases/ (download page + installers) are NOT in the image: the
 # host mounts them read-only from ~/scratch-editor-deploy/www/, which the WarutC/spark-firmware-releases

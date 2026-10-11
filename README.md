@@ -6,6 +6,26 @@ Scratch project by pressing "Create" on that website or by visiting <https://scr
 This is a source code repository for the packages that make up the Scratch editor and a few additional support
 packages. Use this if you'd like to learn about how the Scratch editor works or to contribute to its development.
 
+## การดัดแปลง / Modifications (AGPL-3.0 §5)
+
+Repo นี้เป็นเวอร์ชัน**ดัดแปลง**ของ [scratchfoundation/scratch-editor](https://github.com/scratchfoundation/scratch-editor)
+ต้นทาง licensed ภายใต้ AGPL-3.0-only — repo นี้คง license เดิมทุกประการ (`LICENSE`, `"license": "AGPL-3.0-only"`
+ในทุก package)
+
+สิ่งที่ดัดแปลง (รายละเอียดราย commit ดูได้ใน git history):
+
+- แบรนด์ Sparky — สีธีม, โลโก้, ชื่อ tab, footer แทน Scratch purple/cat
+- Firefly: mascot/sprite เริ่มต้น, costume ในคลัง, avatar
+- Spark extension (`packages/scratch-vm/src/extensions/scratch3_spark/`) — บล็อกเซนเซอร์ฮาร์ดแวร์ Sparky
+  (LED, IMU, mic, light, ToF, QR, ใบหน้า) ต่อ WebSocket ไป middleware ของผู้ใช้
+- Docker image + helm chart (`kubernetes/`) สำหรับ deploy ขึ้น Kubernetes
+- ตัวอย่างโปรเจกต์ `examples/`
+
+AGPL-3.0 §13:  deployed service แสดงลิงก์ corresponding source ที่ footer
+(<https://github.com/sparkyai-zi/scratch-editor> — repo นี้) rebuild จาก commit เดิมต้องได้ผลลัพธ์เดิม
+
+เครื่องหมายการค้า Scratch (ชื่อ, โลโก้, Scratch Cat ฯลฯ) เป็นของ Scratch Foundation — ดู `TRADEMARK`
+
 ## What's in this repository?
 
 The `packages` directory in this repository contains:
