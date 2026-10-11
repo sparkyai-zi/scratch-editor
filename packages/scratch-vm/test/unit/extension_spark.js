@@ -114,7 +114,7 @@ class MockWebSocket {
     close () {}
 }
 
-const withSparkWebSocketEnv = (sparkEnv, fn) => {
+const withSparkWebSocketEnv = sparkEnv => {
     const hadWindow = Object.prototype.hasOwnProperty.call(global, 'window');
     const hadWebSocket = Object.prototype.hasOwnProperty.call(global, 'WebSocket');
     const originalWindow = global.window;
@@ -150,13 +150,13 @@ const withSparkWebSocketEnv = (sparkEnv, fn) => {
 };
 
 test('Story 10.1 — WS_URL uses window.SPARK_ENV.MIDDLEWARE_WS_URL when set (K8s deployment path)', t => {
-    const url = withSparkWebSocketEnv({MIDDLEWARE_WS_URL: 'wss://staging.example/ws'}, () => {});
+    const url = withSparkWebSocketEnv({MIDDLEWARE_WS_URL: 'wss://staging.example/ws'});
     t.equal(url, 'wss://staging.example/ws', 'WebSocket constructed with env-injected URL');
     t.end();
 });
 
 test('Story 10.1 — WS_URL falls back to ws://localhost:8080 when window.SPARK_ENV is absent (Electron desktop path)', t => {
-    const url = withSparkWebSocketEnv(undefined, () => {});
+    const url = withSparkWebSocketEnv(undefined);
     t.equal(url, 'ws://localhost:8080', 'WebSocket constructed with localhost fallback URL');
     t.end();
 });
@@ -190,7 +190,9 @@ test('ledTargets menu + Thai translations are single-source (Story 2.8)', t => {
 test('setLedBrightness per-LED index (Story 2.8) + amber bench-tuning', t => {
     const sent = [];
     const inst = new Scratch3SparkBlocks(fakeRuntime);
-    inst._peripheral.send = (cmd, data) => { sent.push({cmd, data}); return Promise.resolve({}); };
+    inst._peripheral.send = (cmd, data) => {
+        sent.push({cmd, data}); return Promise.resolve({});
+    };
     inst.setLedBrightness({WHICH: 'both', BRIGHTNESS: 200});
     inst.setLedBrightness({WHICH: 'led1', BRIGHTNESS: 50});
     inst.setLedBrightness({WHICH: 'led2', BRIGHTNESS: 255});

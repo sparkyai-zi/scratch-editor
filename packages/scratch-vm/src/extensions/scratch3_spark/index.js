@@ -44,7 +44,9 @@ const POLL_INTERVAL_MS = 30;
 const LED_COLOR_MAP = {
     red: {r: 255, g: 0, b: 0},
     green: {r: 0, g: 255, b: 0},
-    amber: {r: 100, g: 255, b: 0},   // bench-tuned for the red+green LED (2026-05-17); NOT web-amber {255,191,0}, which reads too red on this hardware
+    // bench-tuned for the red+green LED (2026-05-17); NOT web-amber {255,191,0},
+    // which reads too red on this hardware
+    amber: {r: 100, g: 255, b: 0},
     off: {r: 0, g: 0, b: 0}
 };
 const LED_COLOR_NAMES = Object.keys(LED_COLOR_MAP);
@@ -541,9 +543,9 @@ class SparkPeripheral {
         const gen = ++this._capsGen; // 12-7 review P17
         this.send('capabilities').then(resp => {
             if (gen !== this._capsGen) return; // stale settlement from a dead session
-            this._capabilities = (resp && resp.status === 'ok' && Array.isArray(resp.capabilities))
-                ? new Set(resp.capabilities)
-                : null;
+            this._capabilities = (resp && resp.status === 'ok' && Array.isArray(resp.capabilities)) ?
+                new Set(resp.capabilities) :
+                null;
         }, () => {
             if (gen !== this._capsGen) return;
             this._capabilities = null;
@@ -599,7 +601,11 @@ class Scratch3SparkBlocks {
                 {
                     opcode: 'setLedColor',
                     blockType: BlockType.COMMAND,
-                    text: formatMessage({id: 'spark.setLedColor', default: 'set LED [WHICH] color to [COLOR]', description: 'Set LED color (which LED + color)'}),
+                    text: formatMessage({
+                        id: 'spark.setLedColor',
+                        default: 'set LED [WHICH] color to [COLOR]',
+                        description: 'Set LED color (which LED + color)'
+                    }),
                     arguments: {
                         WHICH: {
                             type: ArgumentType.STRING,
@@ -616,7 +622,11 @@ class Scratch3SparkBlocks {
                 {
                     opcode: 'setLedBrightness',
                     blockType: BlockType.COMMAND,
-                    text: formatMessage({id: 'spark.setLedBrightness', default: 'set LED [WHICH] brightness to [BRIGHTNESS]', description: 'Set LED brightness 0-255 (which LED + level)'}),
+                    text: formatMessage({
+                        id: 'spark.setLedBrightness',
+                        default: 'set LED [WHICH] brightness to [BRIGHTNESS]',
+                        description: 'Set LED brightness 0-255 (which LED + level)'
+                    }),
                     arguments: {
                         WHICH: {
                             type: ArgumentType.STRING,
@@ -634,7 +644,11 @@ class Scratch3SparkBlocks {
                 {
                     opcode: 'playTone',
                     blockType: BlockType.COMMAND,
-                    text: formatMessage({id: 'spark.playTone', default: 'play tone [FREQ] Hz for [DUR] ms', description: 'Play buzzer tone'}),
+                    text: formatMessage({
+                        id: 'spark.playTone',
+                        default: 'play tone [FREQ] Hz for [DUR] ms',
+                        description: 'Play buzzer tone'
+                    }),
                     arguments: {
                         FREQ: {type: ArgumentType.NUMBER, defaultValue: 440},
                         DUR: {type: ArgumentType.NUMBER, defaultValue: 500}
@@ -652,7 +666,11 @@ class Scratch3SparkBlocks {
                 {
                     opcode: 'whenButtonPressed',
                     blockType: BlockType.HAT,
-                    text: formatMessage({id: 'spark.whenButtonPressed', default: 'when button [BTN] pressed', description: 'Hat: when button pressed'}),
+                    text: formatMessage({
+                        id: 'spark.whenButtonPressed',
+                        default: 'when button [BTN] pressed',
+                        description: 'Hat: when button pressed'
+                    }),
                     arguments: {
                         BTN: {
                             type: ArgumentType.STRING,
@@ -664,7 +682,11 @@ class Scratch3SparkBlocks {
                 {
                     opcode: 'isButtonPressed',
                     blockType: BlockType.BOOLEAN,
-                    text: formatMessage({id: 'spark.isButtonPressed', default: 'button [BTN] pressed?', description: 'Boolean: is button pressed'}),
+                    text: formatMessage({
+                        id: 'spark.isButtonPressed',
+                        default: 'button [BTN] pressed?',
+                        description: 'Boolean: is button pressed'
+                    }),
                     arguments: {
                         BTN: {
                             type: ArgumentType.STRING,
@@ -678,41 +700,69 @@ class Scratch3SparkBlocks {
                 {
                     opcode: 'imuAccelX',
                     blockType: BlockType.REPORTER,
-                    text: formatMessage({id: 'spark.imuAccelX', default: 'accel X', description: 'IMU accelerometer X axis (g)'})
+                    text: formatMessage({
+                        id: 'spark.imuAccelX',
+                        default: 'accel X',
+                        description: 'IMU accelerometer X axis (g)'
+                    })
                 },
                 {
                     opcode: 'imuAccelY',
                     blockType: BlockType.REPORTER,
-                    text: formatMessage({id: 'spark.imuAccelY', default: 'accel Y', description: 'IMU accelerometer Y axis (g)'})
+                    text: formatMessage({
+                        id: 'spark.imuAccelY',
+                        default: 'accel Y',
+                        description: 'IMU accelerometer Y axis (g)'
+                    })
                 },
                 {
                     opcode: 'imuAccelZ',
                     blockType: BlockType.REPORTER,
-                    text: formatMessage({id: 'spark.imuAccelZ', default: 'accel Z', description: 'IMU accelerometer Z axis (g)'})
+                    text: formatMessage({
+                        id: 'spark.imuAccelZ',
+                        default: 'accel Z',
+                        description: 'IMU accelerometer Z axis (g)'
+                    })
                 },
                 '---',
                 // ── Motion · Gyroscope ──────────────────────────────
                 {
                     opcode: 'imuGyroX',
                     blockType: BlockType.REPORTER,
-                    text: formatMessage({id: 'spark.imuGyroX', default: 'gyro X', description: 'IMU gyroscope X axis (deg/s)'})
+                    text: formatMessage({
+                        id: 'spark.imuGyroX',
+                        default: 'gyro X',
+                        description: 'IMU gyroscope X axis (deg/s)'
+                    })
                 },
                 {
                     opcode: 'imuGyroY',
                     blockType: BlockType.REPORTER,
-                    text: formatMessage({id: 'spark.imuGyroY', default: 'gyro Y', description: 'IMU gyroscope Y axis (deg/s)'})
+                    text: formatMessage({
+                        id: 'spark.imuGyroY',
+                        default: 'gyro Y',
+                        description: 'IMU gyroscope Y axis (deg/s)'
+                    })
                 },
                 {
                     opcode: 'imuGyroZ',
                     blockType: BlockType.REPORTER,
-                    text: formatMessage({id: 'spark.imuGyroZ', default: 'gyro Z', description: 'IMU gyroscope Z axis (deg/s)'})
+                    text: formatMessage({
+                        id: 'spark.imuGyroZ',
+                        default: 'gyro Z',
+                        description: 'IMU gyroscope Z axis (deg/s)'
+                    })
                 },
                 '---',
                 // ── Motion · Angle ──────────────────────────────────
                 {
                     opcode: 'imuPitch',
                     blockType: BlockType.REPORTER,
-                    text: formatMessage({id: 'spark.imuPitch', default: 'pitch', description: 'IMU tilt pitch (degrees)'})
+                    text: formatMessage({
+                        id: 'spark.imuPitch',
+                        default: 'pitch',
+                        description: 'IMU tilt pitch (degrees)'
+                    })
                 },
                 {
                     opcode: 'imuRoll',
@@ -723,7 +773,11 @@ class Scratch3SparkBlocks {
                     // Story 3.11 — tilt-compensated magnetic heading (degrees, -180..180).
                     opcode: 'imuYaw',
                     blockType: BlockType.REPORTER,
-                    text: formatMessage({id: 'spark.imuYaw', default: 'yaw', description: 'IMU heading / yaw (degrees, -180..180)'})
+                    text: formatMessage({
+                        id: 'spark.imuYaw',
+                        default: 'yaw',
+                        description: 'IMU heading / yaw (degrees, -180..180)'
+                    })
                 },
                 '---',
                 // ── Motion · Shake gesture + Fusion (Story 3.3 / 3.11) ──
@@ -779,17 +833,29 @@ class Scratch3SparkBlocks {
                 {
                     opcode: 'whenLoud',
                     blockType: BlockType.HAT,
-                    text: formatMessage({id: 'spark.whenLoud', default: 'when loud', description: 'Hat: when a loud sound happens'})
+                    text: formatMessage({
+                        id: 'spark.whenLoud',
+                        default: 'when loud',
+                        description: 'Hat: when a loud sound happens'
+                    })
                 },
                 {
                     opcode: 'micLevel',
                     blockType: BlockType.REPORTER,
-                    text: formatMessage({id: 'spark.micLevel', default: 'sound level', description: 'Mic level reporter (0..100 sound level, dB-mapped from the mic RMS in firmware)'})
+                    text: formatMessage({
+                        id: 'spark.micLevel',
+                        default: 'sound level',
+                        description: 'Mic level reporter (0..100 sound level, dB-mapped from the mic RMS in firmware)'
+                    })
                 },
                 {
                     opcode: 'setMicThreshold',
                     blockType: BlockType.COMMAND,
-                    text: formatMessage({id: 'spark.setMicThreshold', default: 'set loud sensitivity to [LEVEL]', description: 'Set whenLoud threshold level 1/2/3'}),
+                    text: formatMessage({
+                        id: 'spark.setMicThreshold',
+                        default: 'set loud sensitivity to [LEVEL]',
+                        description: 'Set whenLoud threshold level 1/2/3'
+                    }),
                     arguments: {LEVEL: {type: ArgumentType.STRING, menu: 'sensorLevels', defaultValue: '2'}}
                 },
                 '---',
@@ -797,17 +863,29 @@ class Scratch3SparkBlocks {
                 {
                     opcode: 'whenBright',
                     blockType: BlockType.HAT,
-                    text: formatMessage({id: 'spark.whenBright', default: 'when bright', description: 'Hat: when it gets bright'})
+                    text: formatMessage({
+                        id: 'spark.whenBright',
+                        default: 'when bright',
+                        description: 'Hat: when it gets bright'
+                    })
                 },
                 {
                     opcode: 'lightLevel',
                     blockType: BlockType.REPORTER,
-                    text: formatMessage({id: 'spark.lightLevel', default: 'light level', description: 'Light level reporter (lux)'})
+                    text: formatMessage({
+                        id: 'spark.lightLevel',
+                        default: 'light level',
+                        description: 'Light level reporter (lux)'
+                    })
                 },
                 {
                     opcode: 'setLightThreshold',
                     blockType: BlockType.COMMAND,
-                    text: formatMessage({id: 'spark.setLightThreshold', default: 'set bright sensitivity to [LEVEL]', description: 'Set whenBright threshold level 1/2/3'}),
+                    text: formatMessage({
+                        id: 'spark.setLightThreshold',
+                        default: 'set bright sensitivity to [LEVEL]',
+                        description: 'Set whenBright threshold level 1/2/3'
+                    }),
                     arguments: {LEVEL: {type: ArgumentType.STRING, menu: 'sensorLevels', defaultValue: '2'}}
                 },
                 '---',
@@ -815,17 +893,29 @@ class Scratch3SparkBlocks {
                 {
                     opcode: 'whenNear',
                     blockType: BlockType.HAT,
-                    text: formatMessage({id: 'spark.whenNear', default: 'when object near', description: 'Hat: when an object comes near'})
+                    text: formatMessage({
+                        id: 'spark.whenNear',
+                        default: 'when object near',
+                        description: 'Hat: when an object comes near'
+                    })
                 },
                 {
                     opcode: 'tofDistance',
                     blockType: BlockType.REPORTER,
-                    text: formatMessage({id: 'spark.tofDistance', default: 'nearest distance', description: 'TOF distance reporter (mm; 9999 = no target)'})
+                    text: formatMessage({
+                        id: 'spark.tofDistance',
+                        default: 'nearest distance',
+                        description: 'TOF distance reporter (mm; 9999 = no target)'
+                    })
                 },
                 {
                     opcode: 'setTofThreshold',
                     blockType: BlockType.COMMAND,
-                    text: formatMessage({id: 'spark.setTofThreshold', default: 'set near sensitivity to [LEVEL]', description: 'Set whenNear threshold level 1/2/3'}),
+                    text: formatMessage({
+                        id: 'spark.setTofThreshold',
+                        default: 'set near sensitivity to [LEVEL]',
+                        description: 'Set whenNear threshold level 1/2/3'
+                    }),
                     arguments: {LEVEL: {type: ArgumentType.STRING, menu: 'sensorLevels', defaultValue: '2'}}
                 },
                 // ══ major break: SENSORS → CAMERA (M3 module, delivered later) ══
@@ -937,19 +1027,31 @@ class Scratch3SparkBlocks {
                 {
                     opcode: 'setQrScan',
                     blockType: BlockType.COMMAND,
-                    text: formatMessage({id: 'spark.setQrScan', default: 'turn QR scanning [STATE]', description: 'Start/stop QR card scanning'}),
+                    text: formatMessage({
+                        id: 'spark.setQrScan',
+                        default: 'turn QR scanning [STATE]',
+                        description: 'Start/stop QR card scanning'
+                    }),
                     arguments: {STATE: {type: ArgumentType.STRING, menu: 'qrScanState', defaultValue: 'on'}}
                 },
                 {
                     opcode: 'whenScanned',
                     blockType: BlockType.HAT,
-                    text: formatMessage({id: 'spark.whenScanned', default: 'when scanned [TEXT]', description: 'Hat: fires when a QR card with this exact text is scanned'}),
+                    text: formatMessage({
+                        id: 'spark.whenScanned',
+                        default: 'when scanned [TEXT]',
+                        description: 'Hat: fires when a QR card with this exact text is scanned'
+                    }),
                     arguments: {TEXT: {type: ArgumentType.STRING, defaultValue: 'เสือ'}}
                 },
                 {
                     opcode: 'lastScannedText',
                     blockType: BlockType.REPORTER,
-                    text: formatMessage({id: 'spark.lastScannedText', default: 'last scanned text', description: 'Reporter: the most recently decoded QR text (empty before any scan)'})
+                    text: formatMessage({
+                        id: 'spark.lastScannedText',
+                        default: 'last scanned text',
+                        description: 'Reporter: the most recently decoded QR text (empty before any scan)'
+                    })
                 }
             ],
             menus: {
@@ -1004,17 +1106,42 @@ class Scratch3SparkBlocks {
                 sensorLevels: {
                     acceptReporters: true,
                     items: [
-                        {text: formatMessage({id: 'spark.sensorLevel.1', default: 'high', description: 'Sensor sensitivity level 1 (most sensitive)'}), value: '1'},
-                        {text: formatMessage({id: 'spark.sensorLevel.2', default: 'medium', description: 'Sensor sensitivity level 2 (default)'}), value: '2'},
-                        {text: formatMessage({id: 'spark.sensorLevel.3', default: 'low', description: 'Sensor sensitivity level 3 (least sensitive)'}), value: '3'}
+                        {text: formatMessage({
+                            id: 'spark.sensorLevel.1',
+                            default: 'high',
+                            description: 'Sensor sensitivity level 1 (most sensitive)'
+                        }),
+                        value: '1'},
+                        {text: formatMessage({
+                            id: 'spark.sensorLevel.2',
+                            default: 'medium',
+                            description: 'Sensor sensitivity level 2 (default)'
+                        }),
+                        value: '2'},
+                        {text: formatMessage({
+                            id: 'spark.sensorLevel.3',
+                            default: 'low',
+                            description: 'Sensor sensitivity level 3 (least sensitive)'
+                        }),
+                        value: '3'}
                     ]
                 },
                 // Story 12.6 — QR scanning on/off menu.
                 qrScanState: {
                     acceptReporters: false,
                     items: [
-                        {text: formatMessage({id: 'spark.qrScanState.on', default: 'on', description: 'Start QR scanning'}), value: 'on'},
-                        {text: formatMessage({id: 'spark.qrScanState.off', default: 'off', description: 'Stop QR scanning'}), value: 'off'}
+                        {text: formatMessage({
+                            id: 'spark.qrScanState.on',
+                            default: 'on',
+                            description: 'Start QR scanning'
+                        }),
+                        value: 'on'},
+                        {text: formatMessage({
+                            id: 'spark.qrScanState.off',
+                            default: 'off',
+                            description: 'Stop QR scanning'
+                        }),
+                        value: 'off'}
                     ]
                 },
                 // Story 3.11 — orientation sensor-fusion algorithm for pitch/roll/yaw.
@@ -1023,11 +1150,36 @@ class Scratch3SparkBlocks {
                 fusionAlgos: {
                     acceptReporters: true,
                     items: [
-                        {text: formatMessage({id: 'spark.fusionAlgo.none', default: 'raw', description: 'Fusion: none (accel/mag only)'}), value: 'none'},
-                        {text: formatMessage({id: 'spark.fusionAlgo.complementary', default: 'smooth', description: 'Fusion: complementary (default)'}), value: 'complementary'},
-                        {text: formatMessage({id: 'spark.fusionAlgo.kalman', default: 'Kalman', description: 'Fusion: 1-D Kalman'}), value: 'kalman'},
-                        {text: formatMessage({id: 'spark.fusionAlgo.madgwick', default: 'Madgwick', description: 'Fusion: Madgwick'}), value: 'madgwick'},
-                        {text: formatMessage({id: 'spark.fusionAlgo.mahony', default: 'Mahony', description: 'Fusion: Mahony'}), value: 'mahony'}
+                        {text: formatMessage({
+                            id: 'spark.fusionAlgo.none',
+                            default: 'raw',
+                            description: 'Fusion: none (accel/mag only)'
+                        }),
+                        value: 'none'},
+                        {text: formatMessage({
+                            id: 'spark.fusionAlgo.complementary',
+                            default: 'smooth',
+                            description: 'Fusion: complementary (default)'
+                        }),
+                        value: 'complementary'},
+                        {text: formatMessage({
+                            id: 'spark.fusionAlgo.kalman',
+                            default: 'Kalman',
+                            description: 'Fusion: 1-D Kalman'
+                        }),
+                        value: 'kalman'},
+                        {text: formatMessage({
+                            id: 'spark.fusionAlgo.madgwick',
+                            default: 'Madgwick',
+                            description: 'Fusion: Madgwick'
+                        }),
+                        value: 'madgwick'},
+                        {text: formatMessage({
+                            id: 'spark.fusionAlgo.mahony',
+                            default: 'Mahony',
+                            description: 'Fusion: Mahony'
+                        }),
+                        value: 'mahony'}
                     ]
                 },
                 // Story 4.5 — AI color-target menu (single source: AI_COLOR_TARGETS).
