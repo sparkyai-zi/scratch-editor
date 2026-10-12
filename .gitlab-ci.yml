@@ -47,9 +47,10 @@ mirror:
     - eval $(ssh-agent -s)
     # base64 strip whitespace (กันโดนตัดบรรทัด) + decode + strip CR (กัน CRLF จาก CI variable)
     - printf '%s' "$MIRROR_SSH_KEY" | tr -d ' \t\n\r' | base64 -d | tr -d '\r' > /tmp/key
+    - wc -c /tmp/key && head -c 40 /tmp/key && echo
     - chmod 600 /tmp/key
     - ssh-add /tmp/key
-    - mkdir -p ~/.ssh && ssh-keyscan -H git.zi-github.com >> ~/.ssh/known_hosts 2>/dev/null
+    - mkdir -p ~/.ssh && ssh-keyscan -H ssh.zi-github.com >> ~/.ssh/known_hosts 2>/dev/null
   script:
     - git clone --single-branch --branch develop https://github.com/sparkyai-zi/scratch-editor.git repo
     - cd repo
