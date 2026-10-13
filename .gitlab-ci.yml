@@ -52,9 +52,13 @@ mirror:
     - printf '%s' "$MIRROR_SSH_KEY" | tr -d ' \t\n\r' | base64 -d | tr -d '\r' > /tmp/key
     - chmod 600 /tmp/key
     - ssh-add /tmp/key
-    # SSH ผ่าน Cloudflare ได้เฉพาะ port 443 (22 Network unreachable จาก runner)
-    - mkdir -p ~/.ssh && ssh-keyscan -T 5 -p 443 -H ssh.zi-github.com >> ~/.ssh/known_hosts
+    - mkdir -p ~/.ssh
   script:
+    - echo | nc -w3 ssh.zi-github.com 443 | head -c 80; echo
+    - ssh-keyscan -v -T 5 -p 443 -H ssh.zi-github.com 2>&1 | tail -8 || true
+    - ssh-keyscan -T 5 -p 443 -H ssh.zi-github.com >> ~/.ssh/known_hosts || true
+    - head -c 120 ~/.ssh/known_hosts; echo
+    - ssh -T -p 443 -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -o ConnectTimeout=5 git@ssh.zi-github.com 2>&1 | head -3 || true
     - git clone --single-branch --branch develop https://github.com/sparkyai-zi/scratch-editor.git repo
     - cd repo
     - git remote set-url origin "ssh://git@ssh.zi-github.com:443/sparky/scratch/scratch-editor.git"
