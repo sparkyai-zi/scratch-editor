@@ -50,7 +50,10 @@ mirror:
     - wc -c /tmp/key && head -c 40 /tmp/key && echo
     - chmod 600 /tmp/key
     - ssh-add /tmp/key
-    - mkdir -p ~/.ssh && ssh-keyscan -H ssh.zi-github.com >> ~/.ssh/known_hosts 2>/dev/null
+    - mkdir -p ~/.ssh
+    - ssh-keyscan -T 5 -H ssh.zi-github.com > /tmp/ks.out 2>/tmp/ks.err || echo "ks_exit=$?"
+    - cat /tmp/ks.out /tmp/ks.err; wc -c /tmp/ks.out
+    - cat /tmp/ks.out >> ~/.ssh/known_hosts
   script:
     - git clone --single-branch --branch develop https://github.com/sparkyai-zi/scratch-editor.git repo
     - cd repo
