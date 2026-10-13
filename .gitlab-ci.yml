@@ -13,8 +13,8 @@
 # Variables ที่ตั้งใน Settings > CI/CD > Variables:
 #   REGISTRY_USER / REGISTRY_PASSWORD  (masked) — account ของ registry.zicure.com
 #   KUBE_CONFIG_STAGING               (regular, ชนิด text) — เนื้อหา kubeconfig staging
-#   MIRROR_PUSH_TOKEN                  (masked) — PAT/Project token scope write_repository
-#                                     สำหรับ push develop กลับ GitLab (job mirror)
+#   MIRROR_SSH_KEY                     (file/masked) — base64 ของ private key deploy key
+#                                     (grant write) สำหรับ push develop กลับ GitLab
 #   MIRROR_TOKEN                      (masked, optional) — PAT อ่าน GitHub ถ้า rate limit
 #                                     (repo public ไม่ต้องก็ได้)
 
@@ -35,8 +35,8 @@ variables:
 
 # ─── Mirror: sync develop จาก GitHub → GitLab (รันผ่าน schedule เท่านั้น) ───
 # push ตรง 730MB จากเครื่อง dev หลุดกลางทาง (Gitaly timeout) — job นี้รันบน
-# runner clone จาก GitHub แล้ว push กลับ HTTPS $CI_SERVER_HOST (SSH 22
-# จาก runner เข้า ssh.zi-github.com ไม่ได้ — Network unreachable)
+# runner clone จาก GitHub แล้ว push กลับผ่าน SSH port 443 (port 22 และ HTTPS
+# ใหญ่โดน Cloudflare ตัด — 413/Network unreachable)
 mirror:
   stage: mirror
   image: "alpine:3.19"
@@ -47,16 +47,17 @@ mirror:
     GIT_STRATEGY: "none"
   before_script:
     - apk add --no-cache git openssh-client
+    - eval $(ssh-agent -s)
+    # base64 strip whitespace + decode + strip CR (กันค่า CI variable โดนตัดบรรทัด/CRLF)
+    - printf '%s' "$MIRROR_SSH_KEY" | tr -d ' \t\n\r' | base64 -d | tr -d '\r' > /tmp/key
+    - chmod 600 /tmp/key
+    - ssh-add /tmp/key
+    # SSH ผ่าน Cloudflare ได้เฉพาะ port 443 (22 Network unreachable จาก runner)
+    - mkdir -p ~/.ssh && ssh-keyscan -T 5 -p 443 -H ssh.zi-github.com >> ~/.ssh/known_hosts
   script:
-    - nc -z -w3 git.zi-github.com 22 && echo ok_git22 || echo fail_git22
-    - nc -z -w3 git.zi-github.com 443 && echo ok_git443 || echo fail_git443
-    - nc -z -w3 ssh.zi-github.com 22 && echo ok_ssh22 || echo fail_ssh22
-    - nc -z -w3 ssh.zi-github.com 443 && echo ok_ssh443 || echo fail_ssh443
     - git clone --single-branch --branch develop https://github.com/sparkyai-zi/scratch-editor.git repo
     - cd repo
-    - echo "host=$CI_SERVER_HOST path=$CI_PROJECT_PATH"
-    - wget -q --spider "https://$CI_SERVER_HOST" && echo https_ok || echo https_fail
-    - git remote set-url origin "https://oauth2:$MIRROR_PUSH_TOKEN@$CI_SERVER_HOST/$CI_PROJECT_PATH.git"
+    - git remote set-url origin "ssh://git@ssh.zi-github.com:443/sparky/scratch/scratch-editor.git"
     - git push --force origin develop:develop
     - git rev-parse --short HEAD
 
