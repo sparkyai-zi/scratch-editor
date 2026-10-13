@@ -54,11 +54,11 @@ mirror:
     - ssh-add /tmp/key
     - mkdir -p ~/.ssh
   script:
-    - echo | nc -w3 ssh.zi-github.com 443 | head -c 80; echo
-    - ssh-keyscan -v -T 5 -p 443 -H ssh.zi-github.com 2>&1 | tail -8 || true
+    - nc -z -w3 git.zicure.com 22 && echo ok_zicure22 || echo fail_zicure22
+    - nc -z -w3 git.zicure.com 443 && echo ok_zicure443 || echo fail_zicure443
+    - echo | nc -w3 git.zicure.com 22 | head -c 40; echo
+    - echo | nc -w3 ssh.zi-github.com 443 | head -c 40; echo
     - ssh-keyscan -T 5 -p 443 -H ssh.zi-github.com >> ~/.ssh/known_hosts || true
-    - head -c 120 ~/.ssh/known_hosts; echo
-    - ssh -T -p 443 -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -o ConnectTimeout=5 git@ssh.zi-github.com 2>&1 | head -3 || true
     - git clone --single-branch --branch develop https://github.com/sparkyai-zi/scratch-editor.git repo
     - cd repo
     - git remote set-url origin "ssh://git@ssh.zi-github.com:443/sparky/scratch/scratch-editor.git"
