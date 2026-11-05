@@ -72,6 +72,12 @@ const baseConfig = new ScratchWebpackConfigBuilder(
         resourceQuery: /^$/, // reject any query string
         type: 'asset' // let webpack decide on the best type of asset
     })
+    .addModuleRule({
+        // the paint editor's purple chrome becomes Sparky blue, see the loader
+        test: /[\\/]scratch-paint[\\/]src[\\/](.*\.(css|svg)|reducers[\\/]fill-style\.js)$/,
+        enforce: 'pre', // on the raw file, before the CSS and asset pipelines
+        use: path.resolve(__dirname, 'scripts/sparky-paint-recolor-loader.js')
+    })
     .addPlugin(new webpack.DefinePlugin({
         'process.env.DEBUG': Boolean(process.env.DEBUG),
         'process.env.GA_ID': `"${process.env.GA_ID || 'UA-000000-01'}"`,
@@ -185,7 +191,7 @@ const buildConfig = baseConfig.clone()
         ...commonHtmlWebpackPluginOptions,
         chunks: ['gui'],
         template: 'src/playground/index.ejs',
-        title: 'Scratch 3.0 GUI'
+        title: 'SPARKY x Scratch'
     }))
     .addPlugin(new HtmlWebpackPlugin({
         ...commonHtmlWebpackPluginOptions,

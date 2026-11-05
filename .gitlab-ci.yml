@@ -1,0 +1,168 @@
+# Sparky Scratch Editor — GitLab CI/CD
+#
+# Pipeline:
+#   schedule -> mirror (sync develop จาก GitHub) — เท่านั้น
+#   push/MR  -> test -> build -> image -> deploy
+#
+# image/deploy ทำงานบน default branch และ tag เท่านั้น (MR ได้แค่ test+build)
+#
+# Registry: บังคับใช้ registry.zicure.com (Harbor, IP ตรง) — ห้ามใช้ registry
+# ของ GitLab instance (registry.zi-github.com อยู่หลัง Cloudflare → push image
+# ใหญ่จะโดน 413 Payload Too Large)
+#
+# Variables ที่ตั้งใน Settings > CI/CD > Variables:
+#   REGISTRY_USER / REGISTRY_PASSWORD  (masked) — account ของ registry.zicure.com
+#   KUBE_CONFIG_STAGING               (regular, ชนิด text) — เนื้อหา kubeconfig staging
+#   MIRROR_SSH_KEY                     (file/masked) — base64 ของ private key deploy key
+#                                     (grant write) สำหรับ push develop กลับ GitLab
+#   MIRROR_TOKEN                      (masked, optional) — PAT อ่าน GitHub ถ้า rate limit
+#                                     (repo public ไม่ต้องก็ได้)
+
+stages:
+  - mirror
+  - test
+  - build
+  - image
+  - deploy
+
+variables:
+  NODE_IMAGE: "node:24"
+  REGISTRY: "registry.zicure.com/spark-staging"
+  IMAGE_NAME: "sparky-scratch-editor"
+  IMAGE_TAG: "${CI_COMMIT_SHORT_SHA}"
+  DOCKER_TLS_CERTDIR: "/certs"
+  npm_config_cache: "$CI_PROJECT_DIR/.npm"
+
+# ─── Mirror: sync develop จาก GitHub → GitLab (รันผ่าน schedule เท่านั้น) ───
+# push ตรง 730MB จากเครื่อง dev หลุดกลางทาง (Gitaly timeout) — job นี้รันบน
+# runner clone จาก GitHub แล้ว push กลับผ่าน SSH port 443 (port 22 และ HTTPS
+# ใหญ่โดน Cloudflare ตัด — 413/Network unreachable)
+mirror:
+  stage: mirror
+  image: "alpine:3.19"
+  rules:
+    - if: $CI_PIPELINE_SOURCE == "schedule"
+  variables:
+    GIT_DEPTH: "0"
+    GIT_STRATEGY: "none"
+  before_script:
+    - apk add --no-cache git openssh-client
+    - eval $(ssh-agent -s)
+    # base64 strip whitespace + decode + strip CR (กันค่า CI variable โดนตัดบรรทัด/CRLF)
+    - printf '%s' "$MIRROR_SSH_KEY" | tr -d ' \t\n\r' | base64 -d | tr -d '\r' > /tmp/key
+    - chmod 600 /tmp/key
+    - ssh-add /tmp/key
+    - mkdir -p ~/.ssh
+  script:
+    - echo | nc -w3 ssh.zi-github.com 443 | head -c 40 || true; echo
+    - ssh-keyscan -T 5 -p 443 -H ssh.zi-github.com >> ~/.ssh/known_hosts || true
+    - head -c 120 ~/.ssh/known_hosts || true; echo
+    - git clone --single-branch --branch develop https://github.com/sparkyai-zi/scratch-editor.git repo
+    - cd repo
+    - git remote set-url origin "ssh://git@ssh.zi-github.com:443/sparky/scratch/scratch-editor.git"
+    - git push --force origin develop:develop
+    - git rev-parse --short HEAD
+
+test:
+  stage: test
+  image: "$NODE_IMAGE"
+  cache:
+    key:
+      files:
+        - package-lock.json
+      prefix: "$CI_COMMIT_REF_SLUG"
+    paths:
+      - .npm/
+  before_script:
+    - npm ci --prefer-offline
+  script:
+    - npm run lint --workspaces --if-present
+    - npm test --workspaces --if-present
+  rules:
+    - if: $CI_PIPELINE_SOURCE == "schedule"
+      when: never
+    - if: $CI_COMMIT_BRANCH == "mirror-bootstrap"
+      when: never
+    - if: $CI_PIPELINE_SOURCE == "merge_request_event"
+    - if: $CI_COMMIT_BRANCH
+
+build:
+  stage: build
+  image: "$NODE_IMAGE"
+  needs:
+    - test
+  cache:
+    key:
+      files:
+        - package-lock.json
+      prefix: "$CI_COMMIT_REF_SLUG"
+    paths:
+      - .npm/
+    policy: pull
+  before_script:
+    - npm ci --prefer-offline
+  script:
+    - npm run build
+  artifacts:
+    paths:
+      - packages/scratch-gui/build/
+    expire_in: 7 days
+  rules:
+    - if: $CI_PIPELINE_SOURCE == "schedule"
+      when: never
+    - if: $CI_COMMIT_BRANCH == "mirror-bootstrap"
+      when: never
+    - if: $CI_PIPELINE_SOURCE == "merge_request_event"
+    - if: $CI_COMMIT_BRANCH
+
+docker-image:
+  stage: image
+  image: "docker:24-cli"
+  services:
+    - docker:24-dind
+  needs:
+    - build
+  before_script:
+    - echo "$REGISTRY_PASSWORD" | docker login -u "$REGISTRY_USER" --password-stdin registry.zicure.com
+  script:
+    - docker build -t ${REGISTRY}/${IMAGE_NAME}:${IMAGE_TAG} .
+    - docker push ${REGISTRY}/${IMAGE_NAME}:${IMAGE_TAG}
+    - docker tag ${REGISTRY}/${IMAGE_NAME}:${IMAGE_TAG} ${REGISTRY}/${IMAGE_NAME}:latest
+    - docker push ${REGISTRY}/${IMAGE_NAME}:latest
+  rules:
+    - if: $CI_PIPELINE_SOURCE == "schedule"
+      when: never
+    - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
+    - if: $CI_COMMIT_TAG
+
+deploy:staging:
+  stage: deploy
+  image: "dtzar/helm-kubectl:3.19"
+  environment:
+    name: staging
+    url: http://sparky.zi-platform.com
+  needs:
+    - docker-image
+  before_script:
+    - mkdir -p ~/.kube
+    - |
+      RAW="$KUBE_CONFIG_STAGING"
+      if ! printf '%s' "$RAW" | grep -q 'apiVersion'; then
+        DEC=$(printf '%s' "$RAW" | tr -d '\n' | base64 -d 2>/dev/null) || DEC=''
+        [ -n "$DEC" ] && RAW="$DEC"
+      fi
+      printf '%b' "$RAW" | sed 's/\r$//' > ~/.kube/config
+      kubectl config view --raw >/dev/null || { echo "kubeconfig invalid"; exit 1; }
+  script:
+    - |
+      helm upgrade --install sparky kubernetes/ -n spark-staging \
+        --reset-values \
+        --set image.repository=${REGISTRY}/${IMAGE_NAME} \
+        --set image.tag=${IMAGE_TAG} \
+        --wait --timeout 5m
+    - kubectl -n spark-staging get pods,ingress
+  rules:
+    - if: $CI_PIPELINE_SOURCE == "schedule"
+      when: never
+    - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
+    - if: $CI_COMMIT_TAG

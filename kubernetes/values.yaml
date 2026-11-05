@@ -1,0 +1,103 @@
+# ค่าเริ่มต้น = scratch-editor (editor GUI) ที่ / ของ sparky.zi-platform.com
+#
+# image: ชี้ไป registry.zicure.com (Harbor) — ห้ามใช้ registry ของ GitLab instance
+# (อยู่หลัง Cloudflare แล้ว push ใหญ่จะโดน 413) CI build แล้ว tag ด้วย commit sha
+
+replicaCount: 1
+
+nameOverride: ""
+
+image:
+  repository: registry.zicure.com/spark-staging/sparky-scratch-editor
+  tag: "latest"
+  pullPolicy: IfNotPresent
+
+imagePullSecrets: []
+
+service:
+  type: ClusterIP
+  port: 80
+
+# พอร์ตใน container — nginx-unprivileged ฟัง 8080 (non-root ไม่ต้อง CAP_NET_BIND_SERVICE)
+containerPort: 8080
+
+ingress:
+  enabled: true
+  className: nginx
+  # หลาย host ได้ (ทุก release มี domain เดียวกัน 2 ตัว: zi-platform คือหลัก, ntpsemi คือ domain ที่คนใช้)
+  hosts:
+    - sparky.zi-platform.com
+    - sparky.ntpsemi.com
+  annotations:
+    nginx.ingress.kubernetes.io/proxy-body-size: 64m
+    nginx.ingress.kubernetes.io/proxy-read-timeout: "120"
+    nginx.ingress.kubernetes.io/proxy-send-timeout: "120"
+  tls: []
+  paths:
+    - path: /
+      pathType: Prefix
+
+# runtime env ของ container -> ถูก render เป็น /env-config.js ตอน start (docker/30-spark-env.sh)
+#   MIDDLEWARE_WS_URL  ค่าเริ่มต้นว่าง -> extension ต่อ ws://localhost:8080 เอง
+#                      (middleware-desktop ในเครื่องผู้ใช้) ไม่ผูกกับ domain ที่เปิดอยู่
+#                      ตั้งเมื่อ middleware จริงคนละ host: --set env.MIDDLEWARE_WS_URL=wss://<url>/ws
+#   (VERSION ไม่ต้องตั้งเอง — image เขียนลง /usr/share/nginx/html/VERSION ตอน build)
+#   (AGPL §13 footer ชี้ https://github.com/sparkyai-zi/scratch-editor ตอน build อยู่แล้ว ไม่ต้องมี env)
+env: {}
+# ตัวอย่าง:
+# env:
+#   MIDDLEWARE_WS_URL: wss://middleware.example.com/ws
+
+# docker/README.md §7: nginx-unprivileged รันเป็น UID 101, html root ต้อง readOnly
+podSecurityContext:
+  runAsNonRoot: true
+  runAsUser: 101
+  runAsGroup: 101
+  fsGroup: 101
+
+securityContext:
+  readOnlyRootFilesystem: true
+  allowPrivilegeEscalation: false
+  capabilities:
+    drop: [ALL]
+
+# readOnlyRootFilesystem -> ต้อง mount ที่เขียนได้ (nginx temp + rendered env-config.js + PID)
+# (html root stays read-only — env-config ถูก render ลง /tmp แล้ว nginx alias ไปอ่าน)
+extraVolumeMounts:
+  - name: tmp
+    mountPath: /tmp
+  - name: cache
+    mountPath: /var/cache/nginx
+  - name: run
+    mountPath: /var/run
+
+extraVolumes:
+  - name: tmp
+    emptyDir: {}
+  - name: cache
+    emptyDir: {}
+  - name: run
+    emptyDir: {}
+
+# /healthz ใน nginx.conf — เฉพาะ static ตอบ 200 ok, ใช้ probe ได้เลย
+livenessProbe:
+  path: /healthz
+  initialDelaySeconds: 20
+  periodSeconds: 20
+
+readinessProbe:
+  path: /healthz
+  initialDelaySeconds: 5
+  periodSeconds: 10
+
+resources:
+  requests:
+    cpu: 100m
+    memory: 128Mi
+  limits:
+    cpu: "1"
+    memory: 256Mi
+
+nodeSelector: {}
+tolerations: []
+affinity: {}

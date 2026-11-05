@@ -1,5 +1,6 @@
 @import "../../css/colors.css";
 @import "../../css/units.css";
+@import "../../css/sparky-tokens.css";
 
 .modal-content {
     width: 480px;
@@ -7,7 +8,12 @@
 }
 
 .header {
-    background-color: $pen-tertiary;
+    background-color: $sparky-blue;
+}
+
+/* The close button's class lives in another CSS module, so match it by its generated class name. */
+.header [class*="close-button_close-button"] {
+    background-color: $sparky-blue-dark;
 }
 
 .body {
@@ -81,8 +87,8 @@
     border-radius: 0.25rem;
     font-weight: 600;
     font-size: 0.85rem;
-    background: $looks-secondary;
-    border: $looks-secondary;
+    background: $sparky-blue;
+    border: $sparky-blue;
     color: white;
     cursor: pointer;
 }
@@ -163,6 +169,25 @@
     height: 80px; */
 }
 
+/*
+    The Sparky hero banner (spark-banner.png, 632x393) is a full-width illustration, unlike the small
+    device icons other extensions use. Scoped by file name so those keep their stock sizing; the banner is
+    emitted as a hashed file (spark-banner.<hash>.png), so the name substring is stable.
+    The modal is 480px wide with a 4px border each side, so the banner is 472px wide: edge to edge, at its own
+    aspect ratio.
+*/
+.activityArea:has(img[src*="spark-banner"]) {
+    height: auto;
+    padding: 0;
+}
+
+.radar-big[src*="spark-banner"],
+.peripheral-activity-icon[src*="spark-banner"] {
+    display: block;
+    width: 472px;
+    height: auto;
+}
+
 .connection-tip-icon {
     position: absolute;
 }
@@ -173,9 +198,9 @@
     right: -15px;
     left: -15px;
     padding: 5px 5px;
-    background-color: $looks-secondary;
+    background-color: $sparky-blue;
     border-radius: 100%;
-    box-shadow: 0px 0px 0px 4px $looks-transparent;
+    box-shadow: 0px 0px 0px 4px $sparky-blue-transparent;
     /* animation: pulse-blue-ring 1s infinite ease-in-out alternate; */
     animation: wiggle 0.5s infinite ease-in-out alternate;
 
@@ -183,7 +208,7 @@
 
 @keyframes pulse-blue-ring {
     100% {
-        box-shadow: 0px 0px 0px 8px $looks-light-transparent;
+        box-shadow: 0px 0px 0px 8px $sparky-blue-light-transparent;
     }
 }
 
@@ -193,9 +218,20 @@
     right: -15px;
     left: -15px;
     padding: 5px 5px;
-    background-color: $pen-primary;
+    background-color: $sparky-blue;
     border-radius: 100%;
-    box-shadow: 0px 0px 0px 4px $pen-transparent;
+    box-shadow: 0px 0px 0px 4px $sparky-blue-transparent;
+}
+
+/*
+    On the full-width Sparky banner the badge hangs off the left edge of the modal (the stock -15px offsets
+    assume a small device icon), so pull it inside the banner's top-left corner.
+*/
+.peripheral-activity:has(img[src*="spark-banner"]) .bluetooth-connecting-icon,
+.peripheral-activity:has(img[src*="spark-banner"]) .bluetooth-connected-icon {
+    top: 12px;
+    left: 12px;
+    right: auto;
 }
 
 @keyframes wiggle {
@@ -209,9 +245,9 @@
 .bluetooth-centered-icon {
     position: absolute;
     padding: 5px 5px;
-    background-color: $looks-secondary;
+    background-color: $sparky-blue;
     border-radius: 100%;
-    box-shadow: 0px 0px 0px 2px $looks-transparent;
+    box-shadow: 0px 0px 0px 2px $sparky-blue-transparent;
 }
 
 .peripheral-tile-widgets {
@@ -221,7 +257,7 @@
 
 .activityArea {
     height: 165px;
-    background-color: $looks-light-transparent;
+    background-color: $sparky-blue-light-transparent;
     display: flex;
     justify-content: center;
     align-items: center;
@@ -269,7 +305,7 @@
 }
 
 .help-step-number {
-    background: $pen-tertiary;
+    background: $sparky-blue-dark;
     border-radius: 100%;
     display: flex;
     justify-content: center;
@@ -302,7 +338,7 @@
 .connection-button {
     padding: 0.6rem 0.75rem;
     border-radius: 0.5rem;
-    background: $looks-secondary;
+    background: $sparky-blue;
     color: white;
     font-weight: 600;
     font-size: 0.85rem;
@@ -314,7 +350,7 @@
 }
 
 .connection-button:disabled {
-    background: $looks-transparent;
+    background: $sparky-blue-transparent;
 }
 
 .segmented-button {
@@ -395,7 +431,7 @@
     display: flex;
     padding: 0.25rem 0.1rem;
     border-radius: 1rem;
-    background: $looks-light-transparent;
+    background: $sparky-blue-light-transparent;
 }
 
 .dots-holder-success {
@@ -414,11 +450,11 @@
 }
 
 .inactive-step-dot {
-    background: $looks-transparent;
+    background: $sparky-blue-transparent;
 }
 
 .active-step-dot {
-    background: $looks-secondary;
+    background: $sparky-blue;
 }
 
 .success-dot {
