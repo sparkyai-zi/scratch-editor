@@ -3,12 +3,12 @@
 # image: ชี้ไป registry.zicure.com (Harbor) — ห้ามใช้ registry ของ GitLab instance
 # (อยู่หลัง Cloudflare แล้ว push ใหญ่จะโดน 413) CI build แล้ว tag ด้วย commit sha
 
-replicaCount: 1
+replicaCount: 3
 
 nameOverride: ""
 
 image:
-  repository: registry.zicure.com/spark-staging/sparky-scratch-editor
+  repository: registry.zicure.com/sparky-prod/sparky-scratch-editor
   tag: "latest"
   pullPolicy: IfNotPresent
 
