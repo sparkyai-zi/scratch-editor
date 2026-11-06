@@ -88,6 +88,13 @@ publish:github:
         echo "GITHUB_TOKEN / GITHUB_REPO are required"; exit 1;
       fi
       git remote add github "https://oauth2:${GITHUB_TOKEN}@github.com/${GITHUB_REPO}.git"
+      git fetch github main
+      # squash ทุก commit ของ GitLab ให้เป็น 1 commit เทียบกับ GitHub main
+      git reset --soft github/main
+      if git diff --cached --quiet; then
+        echo "No changes to publish"; exit 0;
+      fi
+      git commit -m "sync: GitLab main -> GitHub (squashed)"
       git push github HEAD:main
   when: manual
   allow_failure: true
