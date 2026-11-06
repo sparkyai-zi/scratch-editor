@@ -8,7 +8,7 @@
 # ของ GitLab instance (อยู่หลัง Cloudflare → push image ใหญ่จะโดน 413)
 #
 # Variables ที่ตั้งใน Settings > CI/CD > Variables:
-#   REGISTRY_USER / REGISTRY_PASSWORD  (masked) — account ของ registry.zicure.com
+#   CI_REGISTRY_USER / CI_REGISTRY_PASSWORD  (masked) — account ของ registry.zicure.com
 #   KUBE_CONFIG_PROD                  (regular/masked, ชนิด text) — kubeconfig prod
 
 stages:
@@ -27,7 +27,7 @@ build:
   services:
     - docker:24-dind
   before_script:
-    - echo "$REGISTRY_PASSWORD" | docker login -u "$REGISTRY_USER" --password-stdin registry.zicure.com
+    - echo "$CI_REGISTRY_PASSWORD" | docker login -u "$CI_REGISTRY_USER" --password-stdin registry.zicure.com
   script:
     - docker build -t ${REGISTRY}/${IMAGE_NAME}:${IMAGE_TAG} .
     - docker push ${REGISTRY}/${IMAGE_NAME}:${IMAGE_TAG}
