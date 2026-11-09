@@ -31,6 +31,12 @@ RUN npm run --workspace=packages/scratch-svg-renderer \
             --workspace=packages/scratch-render \
             --workspace=packages/scratch-vm \
             --workspace=packages/scratch-gui build
+# Cache-bust gui.js so a new deploy can never be masked by a stale Cloudflare/nginx
+# cached copy of the bundle (which would request old asset filenames -> missing images).
+RUN VERSION=$(node -p "require('./package.json').version") && \
+    sed -i "s|src=\"gui.js\"|src=\"gui.js?v=${VERSION}\"|g" packages/scratch-gui/build/index.html && \
+    grep -q "gui.js?v=" packages/scratch-gui/build/index.html && \
+    echo "cache-bust OK: gui.js?v=${VERSION}"
 # Verification gate: fail loudly if the deployable artifact is incomplete,
 # so a silently-broken scratch-gui build can never reach the runtime stage.
 RUN set -e; \
