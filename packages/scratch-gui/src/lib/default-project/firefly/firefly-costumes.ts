@@ -7,12 +7,11 @@ import costume2 from '!raw-loader!./1fafd1ab1e91b2333fcdb59cecf3be6f.svg?';
 import costume3 from '!raw-loader!./e5ff8f8dce7512b8123e271c5e27cb5b.svg?';
 import costume4 from '!raw-loader!./592836920c2cd6bd7e135630f3e45f3b.svg?';
 import costume5 from '!raw-loader!./87c1f5d3bc718224d3da5b00afbe73c9.svg?';
-import costume6 from '!raw-loader!./a0e3d95ab2b2904636c4a7d35b8c3873.svg?';
-import costume7 from '!raw-loader!./45caa70daeffeeeaed63bba101b9ea9c.svg?';
-import costume8 from '!raw-loader!./4a0410a4de6a66d15b624c4ba3baaaf5.svg?';
-import costume9 from '!raw-loader!./8978f61bcdbe5ad7a4c70b0dd2933292.svg?';
-import costume10 from '!raw-loader!./4bbe36811204a17d0465519d4da6cc7c.svg?';
-import costume11 from '!raw-loader!./cd5e51c2a823468dc3d5668df815dc66.svg?';
+import costume6 from '!raw-loader!./45caa70daeffeeeaed63bba101b9ea9c.svg?';
+import costume7 from '!raw-loader!./4a0410a4de6a66d15b624c4ba3baaaf5.svg?';
+import costume8 from '!raw-loader!./8978f61bcdbe5ad7a4c70b0dd2933292.svg?';
+import costume9 from '!raw-loader!./9cdd5f5b3c8890fa8ac251992f653827.svg?';
+import costume10 from '!raw-loader!./ae865ce72715abc5d7f91738afc088c4.svg?';
 
 /** Costumes of the Firefly sprite, in project.json form. */
 export const fireflyCostumes = [
@@ -71,13 +70,13 @@ export const fireflyCostumes = [
         rotationCenterY: 57
     },
     {
-        assetId: 'a0e3d95ab2b2904636c4a7d35b8c3873',
+        assetId: 'a6614f5163518f21aeed296e96c52c9d',
         name: 'SPARKY_Thumbs Up',
         bitmapResolution: 1,
-        md5ext: 'a0e3d95ab2b2904636c4a7d35b8c3873.svg',
+        md5ext: 'a6614f5163518f21aeed296e96c52c9d.svg',
         dataFormat: 'svg',
         rotationCenterX: 51,
-        rotationCenterY: 59
+        rotationCenterY: 54
     },
     {
         assetId: '45caa70daeffeeeaed63bba101b9ea9c',
@@ -107,19 +106,19 @@ export const fireflyCostumes = [
         rotationCenterY: 50
     },
     {
-        assetId: '4bbe36811204a17d0465519d4da6cc7c',
+        assetId: '9cdd5f5b3c8890fa8ac251992f653827',
         name: 'SPARKY_Love Glow Heart',
         bitmapResolution: 1,
-        md5ext: '4bbe36811204a17d0465519d4da6cc7c.svg',
+        md5ext: '9cdd5f5b3c8890fa8ac251992f653827.svg',
         dataFormat: 'svg',
         rotationCenterX: 52,
         rotationCenterY: 50
     },
     {
-        assetId: 'cd5e51c2a823468dc3d5668df815dc66',
+        assetId: 'ae865ce72715abc5d7f91738afc088c4',
         name: 'SPARKY_Love Glow Heart-on',
         bitmapResolution: 1,
-        md5ext: 'cd5e51c2a823468dc3d5668df815dc66.svg',
+        md5ext: 'ae865ce72715abc5d7f91738afc088c4.svg',
         dataFormat: 'svg',
         rotationCenterX: 51,
         rotationCenterY: 50
@@ -169,39 +168,33 @@ export const fireflyAssets = (encoder: TextEncoder) => [
         data: encoder.encode(costume5)
     },
     {
-        id: 'a0e3d95ab2b2904636c4a7d35b8c3873',
+        id: '45caa70daeffeeeaed63bba101b9ea9c',
         assetType: 'ImageVector',
         dataFormat: 'SVG',
         data: encoder.encode(costume6)
     },
     {
-        id: '45caa70daeffeeeaed63bba101b9ea9c',
+        id: '4a0410a4de6a66d15b624c4ba3baaaf5',
         assetType: 'ImageVector',
         dataFormat: 'SVG',
         data: encoder.encode(costume7)
     },
     {
-        id: '4a0410a4de6a66d15b624c4ba3baaaf5',
+        id: '8978f61bcdbe5ad7a4c70b0dd2933292',
         assetType: 'ImageVector',
         dataFormat: 'SVG',
         data: encoder.encode(costume8)
     },
     {
-        id: '8978f61bcdbe5ad7a4c70b0dd2933292',
+        id: '9cdd5f5b3c8890fa8ac251992f653827',
         assetType: 'ImageVector',
         dataFormat: 'SVG',
         data: encoder.encode(costume9)
     },
     {
-        id: '4bbe36811204a17d0465519d4da6cc7c',
+        id: 'ae865ce72715abc5d7f91738afc088c4',
         assetType: 'ImageVector',
         dataFormat: 'SVG',
         data: encoder.encode(costume10)
-    },
-    {
-        id: 'cd5e51c2a823468dc3d5668df815dc66',
-        assetType: 'ImageVector',
-        dataFormat: 'SVG',
-        data: encoder.encode(costume11)
     }
 ];

@@ -107,19 +107,19 @@
             },
             {
                 "name": "SPARKY_Thumbs Up",
-                "assetId": "a0e3d95ab2b2904636c4a7d35b8c3873",
-                "md5ext": "a0e3d95ab2b2904636c4a7d35b8c3873.svg",
+                "assetId": "a6614f5163518f21aeed296e96c52c9d",
+                "md5ext": "a6614f5163518f21aeed296e96c52c9d.svg",
                 "dataFormat": "svg",
                 "bitmapResolution": 1,
                 "rotationCenterX": 51,
-                "rotationCenterY": 59,
+                "rotationCenterY": 54,
                 "tags": [
                     "animals",
                     "fantasy",
                     "sparky",
                     "firefly"
                 ],
-                "rawURL": "static/sparky-assets/a0e3d95ab2b2904636c4a7d35b8c3873.svg"
+                "rawURL": "static/sparky-assets/a6614f5163518f21aeed296e96c52c9d.svg"
             },
             {
                 "name": "SPARKY_Thumbs Up-on",
@@ -171,8 +171,8 @@
             },
             {
                 "name": "SPARKY_Love Glow Heart",
-                "assetId": "4bbe36811204a17d0465519d4da6cc7c",
-                "md5ext": "4bbe36811204a17d0465519d4da6cc7c.svg",
+                "assetId": "9cdd5f5b3c8890fa8ac251992f653827",
+                "md5ext": "9cdd5f5b3c8890fa8ac251992f653827.svg",
                 "dataFormat": "svg",
                 "bitmapResolution": 1,
                 "rotationCenterX": 52,
@@ -183,12 +183,12 @@
                     "sparky",
                     "firefly"
                 ],
-                "rawURL": "static/sparky-assets/4bbe36811204a17d0465519d4da6cc7c.svg"
+                "rawURL": "static/sparky-assets/9cdd5f5b3c8890fa8ac251992f653827.svg"
             },
             {
                 "name": "SPARKY_Love Glow Heart-on",
-                "assetId": "cd5e51c2a823468dc3d5668df815dc66",
-                "md5ext": "cd5e51c2a823468dc3d5668df815dc66.svg",
+                "assetId": "ae865ce72715abc5d7f91738afc088c4",
+                "md5ext": "ae865ce72715abc5d7f91738afc088c4.svg",
                 "dataFormat": "svg",
                 "bitmapResolution": 1,
                 "rotationCenterX": 51,
@@ -199,7 +199,7 @@
                     "sparky",
                     "firefly"
                 ],
-                "rawURL": "static/sparky-assets/cd5e51c2a823468dc3d5668df815dc66.svg"
+                "rawURL": "static/sparky-assets/ae865ce72715abc5d7f91738afc088c4.svg"
             }
         ],
         "sounds": [],
