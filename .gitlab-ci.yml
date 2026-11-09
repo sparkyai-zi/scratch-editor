@@ -27,7 +27,7 @@ stages:
 
 variables:
   NODE_IMAGE: "node:24"
-  REGISTRY: "registry.zicure.com/spark-staging"
+  REGISTRY: "registry.zicure.com/sparky-prod"
   IMAGE_NAME: "sparky-scratch-editor"
   IMAGE_TAG: "${CI_COMMIT_SHORT_SHA}"
   DOCKER_TLS_CERTDIR: "/certs"
@@ -133,20 +133,21 @@ docker-image:
     - if: $CI_PIPELINE_SOURCE == "schedule"
       when: never
     - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
+    - if: $CI_COMMIT_BRANCH == "sparky-on-fresh"
     - if: $CI_COMMIT_TAG
 
-deploy:staging:
+deploy:production:
   stage: deploy
   image: "dtzar/helm-kubectl:3.19"
   environment:
-    name: staging
-    url: http://sparky.zi-platform.com
+    name: production
+    url: https://sparky.ntpsemi.com
   needs:
     - docker-image
   before_script:
     - mkdir -p ~/.kube
     - |
-      RAW="$KUBE_CONFIG_STAGING"
+      RAW="${KUBE_CONFIG_PROD:-$KUBE_CONFIG_STAGING}"
       if ! printf '%s' "$RAW" | grep -q 'apiVersion'; then
         DEC=$(printf '%s' "$RAW" | tr -d '\n' | base64 -d 2>/dev/null) || DEC=''
         [ -n "$DEC" ] && RAW="$DEC"
@@ -155,14 +156,16 @@ deploy:staging:
       kubectl config view --raw >/dev/null || { echo "kubeconfig invalid"; exit 1; }
   script:
     - |
-      helm upgrade --install sparky kubernetes/ -n spark-staging \
+      helm upgrade --install sparky kubernetes/ -n sparky \
         --reset-values \
         --set image.repository=${REGISTRY}/${IMAGE_NAME} \
         --set image.tag=${IMAGE_TAG} \
+        --set replicaCount=3 \
         --wait --timeout 5m
-    - kubectl -n spark-staging get pods,ingress
+    - kubectl -n sparky get pods,ingress
   rules:
     - if: $CI_PIPELINE_SOURCE == "schedule"
       when: never
     - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
+    - if: $CI_COMMIT_BRANCH == "sparky-on-fresh"
     - if: $CI_COMMIT_TAG
