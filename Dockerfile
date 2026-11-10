@@ -11,6 +11,12 @@ RUN npm run --workspace=packages/task-herder build && \
     npm run --workspace=packages/scratch-render build && \
     npm run --workspace=packages/scratch-vm build && \
     npm run --workspace=packages/scratch-gui build
+# Cache-bust gui.js so a new deploy cannot be masked by a stale Cloudflare/browser
+# cached bundle (index.html is no-store, but gui.js is cached for 4h).
+RUN VERSION=$(node -p "require('./package.json').version") && \
+    sed -i "s|src=\"gui.js\"|src=\"gui.js?v=${VERSION}\"|g" packages/scratch-gui/build/index.html && \
+    grep -q "gui.js?v=" packages/scratch-gui/build/index.html && \
+    echo "cache-bust OK: gui.js?v=${VERSION}"
 RUN set -e; \
     d=packages/scratch-gui/build; \
     for f in "$d/index.html" "$d/gui.js"; do \
