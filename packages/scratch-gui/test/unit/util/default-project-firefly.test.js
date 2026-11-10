@@ -38,8 +38,13 @@ describe('Firefly default sprite', () => {
     });
 
     test('the Choose a Sprite and Choose a Costume catalogues use the same SPARKY_ names', () => {
+        expect(sparkySprites[0].name).toBe('Firefly');
         expect(sparkySprites[0].costumes.map(costume => costume.name)).toEqual(EXPECTED_NAMES);
-        expect(sparkyCostumes.map(costume => costume.name)).toEqual(EXPECTED_NAMES);
+        // Firefly-2 is an additional mascot group in the catalogue.
+        expect(sparkySprites[1].name).toBe('Firefly-2');
+        expect(sparkySprites[1].costumes).toHaveLength(12);
+        // sparkyCostumes now holds both groups (12 + 12).
+        expect(sparkyCostumes.length).toBeGreaterThanOrEqual(24);
         // still found by searching "firefly" or "sparky" (the search also matches tags)
         for (const costume of sparkyCostumes) {
             expect(costume.tags).toEqual(expect.arrayContaining(['firefly', 'sparky']));

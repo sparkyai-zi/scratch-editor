@@ -48,13 +48,15 @@ const fail = message => {
 };
 
 const parseArgs = argv => {
-    const options = {src: DEFAULT_SRC, manifest: DEFAULT_MANIFEST};
+    const options = {src: DEFAULT_SRC, manifest: DEFAULT_MANIFEST, name: 'Firefly', append: false};
     for (let i = 0; i < argv.length; i++) {
         const flag = argv[i];
-        if (flag !== '--src' && flag !== '--manifest') fail(`unknown argument ${flag}`);
+        if (flag === '--append') { options.append = true; continue; }
+        if (flag !== '--src' && flag !== '--manifest' && flag !== '--name') fail(`unknown argument ${flag}`);
         const value = argv[++i];
         if (!value) fail(`${flag} needs a value`);
-        options[flag.slice(2)] = path.resolve(value);
+        if (flag === '--name') options.name = value;
+        else options[flag.slice(2)] = path.resolve(value);
     }
     return options;
 };
@@ -227,8 +229,8 @@ const renderCostumeLibrary = costumes => JSON.stringify(
  * @param {object[]} costumes described costumes, in manifest order
  * @returns {string} the sprite library entry (JSON array) for the Choose a Sprite catalogue
  */
-const renderLibrary = costumes => JSON.stringify([{
-    name: 'Firefly',
+const renderLibrary = (costumes, spriteName = 'Firefly') => JSON.stringify([{
+    name: spriteName,
     tags: LIBRARY_TAGS,
     isStage: false,
     costumes: costumes.map(libraryCostume),
@@ -258,22 +260,51 @@ const main = () => {
     const options = parseArgs(process.argv.slice(2));
     const manifest = readManifest(options.manifest);
     const costumes = manifest.map(entry => describeCostume(entry, options.src));
+    const spriteName = options.name;
+    const append = options.append;
 
-    fs.mkdirSync(OUT_DIR, {recursive: true});
-    const keep = new Set(costumes.map(c => c.md5ext));
-    for (const stale of previouslyGenerated()) {
-        if (!keep.has(stale)) fs.rmSync(path.join(OUT_DIR, stale), {force: true});
-    }
-    for (const c of costumes) fs.writeFileSync(path.join(OUT_DIR, c.md5ext), c.bytes);
-    fs.writeFileSync(OUT_MODULE, renderModule(costumes));
-
+    // Copy costume assets into the shared static store (never delete in append mode).
     fs.mkdirSync(STATIC_DIR, {recursive: true});
-    for (const stale of md5Files(STATIC_DIR)) {
-        if (!keep.has(stale)) fs.rmSync(path.join(STATIC_DIR, stale), {force: true});
-    }
     for (const c of costumes) fs.writeFileSync(path.join(STATIC_DIR, c.md5ext), c.bytes);
-    fs.writeFileSync(OUT_LIBRARY, renderLibrary(costumes));
-    fs.writeFileSync(OUT_COSTUME_LIBRARY, renderCostumeLibrary(costumes));
+
+    if (!append) {
+        // Default-project sprite (only the primary 'Firefly' sprite owns the default project).
+        fs.mkdirSync(OUT_DIR, {recursive: true});
+        const keep = new Set(costumes.map(c => c.md5ext));
+        for (const stale of previouslyGenerated()) {
+            if (!keep.has(stale)) fs.rmSync(path.join(OUT_DIR, stale), {force: true});
+        }
+        for (const c of costumes) fs.writeFileSync(path.join(OUT_DIR, c.md5ext), c.bytes);
+        fs.writeFileSync(OUT_MODULE, renderModule(costumes));
+
+        const staleStatic = md5Files(STATIC_DIR);
+        for (const stale of staleStatic) {
+            if (!keep.has(stale)) fs.rmSync(path.join(STATIC_DIR, stale), {force: true});
+        }
+        fs.writeFileSync(OUT_LIBRARY, renderLibrary(costumes, spriteName));
+        fs.writeFileSync(OUT_COSTUME_LIBRARY, renderCostumeLibrary(costumes));
+    } else {
+        // Append mode: merge into the existing catalogues instead of overwriting.
+        let sprites = [];
+        let allCostumes = [];
+        try { sprites = JSON.parse(fs.readFileSync(OUT_LIBRARY, 'utf8')); } catch (e) { sprites = []; }
+        try { allCostumes = JSON.parse(fs.readFileSync(OUT_COSTUME_LIBRARY, 'utf8')); } catch (e) { allCostumes = []; }
+
+        // renderLibrary returns a one-element array string; parse it and append (replace if exists).
+        const newSprite = JSON.parse(renderLibrary(costumes, spriteName))[0];
+        sprites = sprites.filter(s => s.name !== spriteName);
+        sprites.push(newSprite);
+
+        const newCostumes = JSON.parse(renderCostumeLibrary(costumes));
+        // Dedup by md5ext so re-runs are idempotent.
+        const existingKeys = new Set(allCostumes.map(c => c.md5ext));
+        for (const c of newCostumes) {
+            if (!existingKeys.has(c.md5ext)) { allCostumes.push(c); existingKeys.add(c.md5ext); }
+        }
+
+        fs.writeFileSync(OUT_LIBRARY, JSON.stringify(sprites, null, 4) + '\n');
+        fs.writeFileSync(OUT_COSTUME_LIBRARY, JSON.stringify(allCostumes, null, 4) + '\n');
+    }
 
     console.table(costumes.map(c => ({
         name: c.name,
@@ -284,9 +315,7 @@ const main = () => {
         resolution: c.bitmapResolution,
         center: `${c.rotationCenterX},${c.rotationCenterY}`
     })));
-    console.log(`wrote ${keep.size} asset file(s), ${path.relative(PACKAGE_ROOT, OUT_MODULE)}, ` +
-        `${path.relative(PACKAGE_ROOT, STATIC_DIR)}/, ${path.relative(PACKAGE_ROOT, OUT_LIBRARY)} and ` +
-        `${path.relative(PACKAGE_ROOT, OUT_COSTUME_LIBRARY)}`);
+    console.log(`${append ? 'appended' : 'wrote'} ${costumes.length} costume(s) as sprite "${spriteName}"`);
 };
 
 main();
