@@ -8,7 +8,7 @@
 
 This image builds the `packages/scratch-gui` bundle (Webpack production build) and serves the static files via non-root nginx (UID 101) on port 8080 only. No proxying, no API serving — the user's browser opens WebSocket directly to the middleware-gateway at `MIDDLEWARE_WS_URL`, which is injected at container start.
 
-**AGPL §13:** ผู้ใช้ที่เปิดหน้านี้จะเห็น footer มุมล่างขวาที่ลิงก์ไปยัง public source (`https://github.com/WarutC/scratch-editor`) ตามข้อผูกพันของ AGPL-3.0 สำหรับการ deploy เป็น public network service / Users see a footer linking to the public source repo per AGPL §13.
+**AGPL §13:** ผู้ใช้ที่เปิดหน้านี้จะเห็น footer มุมล่างขวาที่ลิงก์ไปยัง public source (`https://github.com/sparkyai-zi/scratch-editor`) ตามข้อผูกพันของ AGPL-3.0 สำหรับการ deploy เป็น public network service / Users see a footer linking to the public source repo per AGPL §13.
 
 **Build-once-deploy-many:** อิมเมจ binary ตัวเดียวกัน deploy ได้ทั้ง staging และ prod ต่างกันแค่ค่า env / The same image binary deploys to staging and prod with only env-var differences (`MIDDLEWARE_WS_URL`).
 
@@ -65,7 +65,7 @@ curl -i http://localhost:8080/healthz
 
 ## §6 Verify AGPL footer
 
-โหลด `/` → ดูที่มุมล่างขวา → ควรเห็น `"ซอร์สโค้ด / Source"` ลิงก์ไปยัง `https://github.com/WarutC/scratch-editor` พร้อมเลข version จาก `env-config.js`
+โหลด `/` → ดูที่มุมล่างขวา → ควรเห็น `"ซอร์สโค้ด / Source"` ลิงก์ไปยัง `https://github.com/sparkyai-zi/scratch-editor` พร้อมเลข version จาก `env-config.js`
 
 Load `/` → bottom-right footer → click `"ซอร์สโค้ด / Source"` → opens public source repo in a new tab.
 
