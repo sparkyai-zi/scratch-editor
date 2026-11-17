@@ -218,6 +218,22 @@
         "isStage": false,
         "costumes": [
             {
+                "name": "SPARKY_Flight-on",
+                "assetId": "e5ff8f8dce7512b8123e271c5e27cb5b",
+                "md5ext": "e5ff8f8dce7512b8123e271c5e27cb5b.svg",
+                "dataFormat": "svg",
+                "bitmapResolution": 1,
+                "rotationCenterX": 51,
+                "rotationCenterY": 60,
+                "tags": [
+                    "animals",
+                    "fantasy",
+                    "sparky",
+                    "firefly"
+                ],
+                "rawURL": "static/sparky-assets/e5ff8f8dce7512b8123e271c5e27cb5b.svg"
+            },
+            {
                 "name": "SPARKY_Walking",
                 "assetId": "a6614f5163518f21aeed296e96c52c9d",
                 "md5ext": "a6614f5163518f21aeed296e96c52c9d.svg",
@@ -264,22 +280,6 @@
                     "firefly"
                 ],
                 "rawURL": "static/sparky-assets/1fafd1ab1e91b2333fcdb59cecf3be6f.svg"
-            },
-            {
-                "name": "SPARKY_Flight-on",
-                "assetId": "e5ff8f8dce7512b8123e271c5e27cb5b",
-                "md5ext": "e5ff8f8dce7512b8123e271c5e27cb5b.svg",
-                "dataFormat": "svg",
-                "bitmapResolution": 1,
-                "rotationCenterX": 51,
-                "rotationCenterY": 60,
-                "tags": [
-                    "animals",
-                    "fantasy",
-                    "sparky",
-                    "firefly"
-                ],
-                "rawURL": "static/sparky-assets/e5ff8f8dce7512b8123e271c5e27cb5b.svg"
             },
             {
                 "name": "SPARKY_Waving Hello",
