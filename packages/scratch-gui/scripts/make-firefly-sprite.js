@@ -36,8 +36,7 @@ const OUT_LIBRARY = path.join(PACKAGE_ROOT, 'src', 'lib', 'libraries', 'sparky-s
 const OUT_COSTUME_LIBRARY = path.join(PACKAGE_ROOT, 'src', 'lib', 'libraries', 'sparky-costumes.json');
 const LIBRARY_TAGS = ['animals', 'fantasy', 'sparky', 'firefly'];
 const DEFAULT_MANIFEST = path.join(__dirname, 'firefly-manifest.json');
-const DEFAULT_SRC = path.resolve(PACKAGE_ROOT, '../../..', 'documents', 'Sparky-scratch-redesign', 'prototype',
-    'assets', 'costumes');
+const DEFAULT_SRC = path.resolve(PACKAGE_ROOT, '../../..', 'new', 'SPARKY_FireflyCostume V2');
 
 const PNG_SIGNATURE = Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]);
 const MD5_FILE = /^[0-9a-f]{32}\.(png|svg)$/;
